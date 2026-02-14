@@ -4,23 +4,35 @@ import CosmicBackground from "./public/components/CosmicBackground";
 
 export default function Home() {
   return (
-    <main className="min-h-screen grid place-items-center p-6 relative overflow-hidden text-white">
+    <main
+      className="
+        min-h-screen grid place-items-center p-6
+        relative overflow-hidden text-white
+      "
+    >
       {/* Cosmic Lounge 背景 */}
       <CosmicBackground />
 
       {/* Main Card */}
       <div
         className="
+          relative z-10
           w-full max-w-md rounded-3xl
-          bg-white/20
-          backdrop-blur-3xl
+          bg-white/20 backdrop-blur-3xl
           border border-white/30
           shadow-xl shadow-black/20
           p-8 text-center space-y-6
         "
       >
         {/* Title */}
-        <h1 className="text-4xl font-extrabold bg-gradient-to-r from-white via-[#AEEBFF] to-[#F7B2C4] bg-clip-text text-transparent drop-shadow-lg tracking-wide">
+        <h1
+          className="
+            text-4xl font-extrabold
+            bg-gradient-to-r from-white via-[#AEEBFF] to-[#F7B2C4]
+            bg-clip-text text-transparent
+            drop-shadow-lg tracking-wide
+          "
+        >
           SongList ✦
         </h1>
 
@@ -44,9 +56,8 @@ export default function Home() {
             bg-gradient-to-r from-[#AEEBFF] via-[#F7B2C4] to-[#FF9A5C]
             px-6 py-3 text-[#0F1A3A] font-semibold
             shadow-lg shadow-black/30
-            hover:scale-[1.04]
-            active:scale-95
-            transition
+            hover:scale-[1.05] active:scale-95
+            transition-transform
           "
         >
           🔍 曲を探してみる

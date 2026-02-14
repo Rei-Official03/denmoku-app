@@ -1,5 +1,7 @@
 // 曲データと型定義
 
+export type SkillLevel = "◎" | "○" | "△" | "×";
+
 export type Song = {
   id: number;
   title: string;
@@ -9,11 +11,12 @@ export type Song = {
   genre: string;
   scale: string;
   instUrl: string; // 空文字 or URL
-  skillLevel: "◎" | "○" | "△" | "×";
+  skillLevel: SkillLevel;
   isPublic: boolean;
-  createdAt: string;
+  createdAt: string; // ISO形式 "YYYY-MM-DD"
 };
 
+// 曲データ本体
 export const songs: Song[] = [
   {
     id: 1,

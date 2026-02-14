@@ -16,7 +16,7 @@ import RequestBox from "./components/RequestBox";
 
 const PAGE_SIZE = 10;
 
-// 🔥 NEW バッジの表示条件（追加から30日以内）
+// NEW 判定（SongCardPublic 用）
 const isNew = (createdAt: string) => {
   const created = new Date(createdAt).getTime();
   const now = Date.now();
@@ -26,15 +26,12 @@ const isNew = (createdAt: string) => {
 };
 
 export default function PublicPage() {
-  // createdAt を必ず "YYYY-MM-DD" の string に統一
   const songsWithDate = useMemo(() => {
     return songs.map((s) => {
-      // 1) string で中身がある → そのまま
       if (typeof s.createdAt === "string" && s.createdAt.trim() !== "") {
         return { ...s, createdAt: s.createdAt };
       }
 
-      // 2) Date 型 → string に変換
       if (s.createdAt instanceof Date) {
         return {
           ...s,
@@ -42,7 +39,6 @@ export default function PublicPage() {
         };
       }
 
-      // 3) null / undefined / "" → 今日の日付
       return {
         ...s,
         createdAt: new Date().toISOString().slice(0, 10),
@@ -50,12 +46,10 @@ export default function PublicPage() {
     });
   }, []);
 
-  // 曲データ
   const [keyword, setKeyword] = useState("");
   const [mode, setMode] = useState<SearchMode>("all");
   const [genre, setGenre] = useState("");
 
-  // 検索確定後の値
   const [searchKeyword, setSearchKeyword] = useState("");
   const [searchMode, setSearchMode] = useState<SearchMode>("all");
   const [searchGenre, setSearchGenre] = useState("");
@@ -63,14 +57,11 @@ export default function PublicPage() {
   const [hasSearched, setHasSearched] = useState(false);
   const [page, setPage] = useState(1);
 
-  // ランキングと新着
   const [ranking, setRanking] = useState<any[]>([]);
   const [recentSongs, setRecentSongs] = useState<any[]>([]);
 
-  // ジャンル一覧
   const genres = useMemo(() => getGenres(songsWithDate), [songsWithDate]);
 
-  // 🔥 ランキング（localStorage はクライアント側のみ）
   useEffect(() => {
     const ranked = songsWithDate
       .map((song) => {
@@ -88,7 +79,6 @@ export default function PublicPage() {
     setRanking(ranked);
   }, [songsWithDate]);
 
-  // 🔥 新着曲（createdAt 必須）
   useEffect(() => {
     const recent = songsWithDate
       .filter((s) => s.isPublic)
@@ -102,7 +92,6 @@ export default function PublicPage() {
     setRecentSongs(recent);
   }, [songsWithDate]);
 
-  // 検索ボタン押したときだけ検索が走る
   const handleSearch = () => {
     setSearchKeyword(keyword);
     setSearchMode(mode);
@@ -111,7 +100,13 @@ export default function PublicPage() {
     setPage(1);
   };
 
-  // フィルタリング
+  const handleClearResults = () => {
+    setKeyword("");
+    setGenre("");
+    setMode("all");
+    setHasSearched(false);
+  };
+
   const filteredSongs = useMemo(() => {
     if (!hasSearched) return [];
 
@@ -170,13 +165,13 @@ export default function PublicPage() {
         genres={genres}
         onSearch={handleSearch}
         onRandom={handleRandom}
+        onClearResults={handleClearResults}
       />
 
       <div className="text-white/60 text-[11px] mt-2 mb-3 text-center select-none">
         📌 スマホは長押し、PC は Ctrl + クリックでコピーできます
       </div>
 
-      {/* PC＝横並び / スマホ＝縦並び */}
       <div className="flex flex-col md:flex-row gap-6 mt-4">
         {/* 左：検索結果 */}
         <div className="flex-1">
@@ -200,6 +195,7 @@ export default function PublicPage() {
                       <SongCardPublic
                         key={song.id}
                         song={song}
+                        isNew={isNew(song.createdAt)}
                         onSelect={() => {}}
                       />
                     ))}
@@ -215,7 +211,9 @@ export default function PublicPage() {
                       >
                         ← 前へ
                       </button>
-                      <span>{page} / {totalPages}</span>
+                      <span>
+                        {page} / {totalPages}
+                      </span>
                       <button
                         type="button"
                         onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
@@ -232,13 +230,13 @@ export default function PublicPage() {
           )}
         </div>
 
-        {/* 右（PC） / 下（スマホ）：ランキング＋新着 */}
+        {/* 右：ランキング 5位まで + 最近追加 5件 & and more… */}
         <div className="md:w-64 space-y-6">
-          {/* 人気ランキング */}
+          {/* 人気ランキング（5位まで） */}
           <div className="space-y-2">
             <h2 className="text-lg font-bold text-white/80">人気ランキング</h2>
 
-            {ranking.slice(0, 10).map((song, i) => (
+            {ranking.slice(0, 5).map((song, i) => (
               <div
                 key={song.id}
                 className="px-3 py-2 rounded-lg bg-white/10 backdrop-blur-sm text-white/80"
@@ -248,24 +246,24 @@ export default function PublicPage() {
             ))}
           </div>
 
-          {/* 最近追加された曲（NEW バッジ付き） */}
+          {/* 最近追加された曲（5件 & and more…） */}
           <div className="space-y-2">
             <h2 className="text-lg font-bold text-white/80">最近追加された曲</h2>
 
-            {recentSongs.map((song) => (
+            {recentSongs.slice(0, 5).map((song) => (
               <div
                 key={song.id}
-                className="px-3 py-2 rounded-lg bg-white/10 backdrop-blur-sm text-white/80 flex items-center justify-between"
+                className="px-3 py-2 rounded-lg bg-white/10 backdrop-blur-sm text-white/80"
               >
-                <span>{song.title}</span>
-
-                {isNew(song.createdAt) && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-400/30 text-orange-100 font-bold tracking-wide flex items-center gap-1">
-                    <span className="text-[11px]">★</span> NEW
-                  </span>
-                )}
+                {song.title}
               </div>
             ))}
+
+            {recentSongs.length > 5 && (
+              <div className="text-right text-white/40 text-[11px] pr-1 select-none">
+                and more…
+              </div>
+            )}
           </div>
         </div>
       </div>

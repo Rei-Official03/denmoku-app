@@ -9,17 +9,17 @@ import type { Song } from "@/lib/songData";
 export function normalize(text: string): string {
   return text
     .toLowerCase()
-    .replace(/[\s　]/g, "")        // 空白除去
+    .replace(/[\s　]/g, "") // 空白除去
     .replace(/[Ａ-Ｚａ-ｚ０-９]/g, (s) =>
       String.fromCharCode(s.charCodeAt(0) - 0xFEE0)
-    )                              // 全角英数字 → 半角
-    .replace(/ヴ/g, "ゔ")          // カタカナ揺れ吸収
+    ) // 全角英数字 → 半角
+    .replace(/ヴ/g, "ゔ") // カタカナ揺れ吸収
     .replace(/[ァ-ン]/g, (s) =>
       String.fromCharCode(s.charCodeAt(0) - 0x60)
-    )                              // カタカナ → ひらがな
-    .replace(/ー/g, "")            // 長音の揺れ吸収
-    .replace(/♯/g, "#")            // シャープ統一
-    .replace(/♭/g, "b");           // フラット統一
+    ) // カタカナ → ひらがな
+    .replace(/ー/g, "") // 長音の揺れ吸収
+    .replace(/♯/g, "#") // シャープ統一
+    .replace(/♭/g, "b"); // フラット統一
 }
 
 // --------------------------------------
@@ -48,7 +48,7 @@ export function searchSongs(songs: Song[], query: string): Song[] {
 // 公開曲のみを返す（isPublic && instUrl）
 // --------------------------------------
 export function filterPublicSongs(songs: Song[]): Song[] {
-  return songs.filter((s) => s.isPublic && !!s.instUrl);
+  return songs.filter((s) => s.isPublic && s.instUrl.trim() !== "");
 }
 
 // --------------------------------------

@@ -25,14 +25,14 @@ export default function RootLayout({
       <body
         className={[
           inter.className,
-          "min-h-screen text-[#F7FAFF] antialiased bg-[#14204A]",
+          "min-h-screen text-[#F7FAFF] antialiased bg-[#14204A] relative overflow-x-hidden",
         ].join(" ")}
       >
         {/* Cosmic Lounge 背景 */}
         <CosmicBackground />
 
         {/* Page content */}
-        <div className="min-h-screen relative z-10">
+        <div className="relative z-10 min-h-screen">
           {children}
         </div>
       </body>

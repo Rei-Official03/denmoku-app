@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { RequestItem } from "@/app/public/requestStorage";
+import type { RequestItem } from "@/lib/requestStorage";
 
 type Props = {
   item: RequestItem;
@@ -11,23 +11,38 @@ type Props = {
 
 export default function RequestCard({ item, onChange }: Props) {
   const router = useRouter();
-  const [data, setData] = useState<RequestItem>(item);
+  const [data, setData] = useState<RequestItem | null>(item);
 
-  // 型付き load()
+  // -----------------------------
+  // localStorage utilities
+  // -----------------------------
   const load = (): RequestItem[] => {
-    const raw = localStorage.getItem("requests_v1");
-    return raw ? (JSON.parse(raw) as RequestItem[]) : [];
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = localStorage.getItem("requests_v1");
+      return raw ? (JSON.parse(raw) as RequestItem[]) : [];
+    } catch {
+      return [];
+    }
   };
 
   const save = (list: RequestItem[]) => {
-    localStorage.setItem("requests_v1", JSON.stringify(list));
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.setItem("requests_v1", JSON.stringify(list));
+    } catch {
+      // localStorage full などは握りつぶす
+    }
   };
 
+  // -----------------------------
+  // Mark as processed
+  // -----------------------------
   const markProcessed = () => {
-    const list = load();
+    if (!data) return;
 
-    // r に型をつける
-    const updated = list.map((r: RequestItem) =>
+    const list = load();
+    const updated = list.map((r) =>
       r.id === data.id ? { ...r, processed: true } : r
     );
 
@@ -36,14 +51,18 @@ export default function RequestCard({ item, onChange }: Props) {
     onChange();
   };
 
+  // -----------------------------
+  // Delete item
+  // -----------------------------
   const deleteItem = () => {
+    if (!data) return;
     if (!confirm("本当に削除しますか？")) return;
 
-    // filter の r にも型をつける
-    const list = load().filter((r: RequestItem) => r.id !== data.id);
+    const updated = load().filter((r) => r.id !== data.id);
+    save(updated);
 
-    save(list);
-    setData(null as any);
+    // UI から即座に消す
+    setData(null);
     onChange();
   };
 
@@ -51,9 +70,11 @@ export default function RequestCard({ item, onChange }: Props) {
 
   return (
     <div
-      className={`p-4 rounded-xl bg-white/10 backdrop-blur-md shadow-md text-white ${
-        data.processed ? "opacity-50" : ""
-      }`}
+      className={`
+        p-4 rounded-xl bg-white/10 backdrop-blur-md shadow-md text-white
+        border border-white/10 transition
+        ${data.processed ? "opacity-50" : ""}
+      `}
     >
       <div className="text-sm font-bold">{data.title}</div>
       <div className="text-xs text-white/70">{data.artist}</div>
@@ -63,6 +84,7 @@ export default function RequestCard({ item, onChange }: Props) {
       </div>
 
       <div className="flex gap-2 mt-3 text-xs">
+        {/* Learned ボタン */}
         <button
           onClick={() => {
             markProcessed();
@@ -72,14 +94,25 @@ export default function RequestCard({ item, onChange }: Props) {
               )}&artist=${encodeURIComponent(data.artist)}`
             );
           }}
-          className="px-3 py-1 rounded-lg bg-white/20 hover:bg-white/30 transition"
+          className="
+            px-3 py-1 rounded-lg
+            bg-gradient-to-r from-sky-300 via-sky-400 to-sky-500
+            hover:from-sky-400 hover:via-sky-500 hover:to-sky-600
+            text-white font-bold shadow-sm hover:shadow transition
+          "
         >
           Learned
         </button>
 
+        {/* Delete ボタン */}
         <button
           onClick={deleteItem}
-          className="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 transition"
+          className="
+            px-3 py-1 rounded-lg
+            bg-white/10 hover:bg-white/20
+            border border-white/10
+            text-white transition
+          "
         >
           Delete
         </button>

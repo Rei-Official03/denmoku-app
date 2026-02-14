@@ -25,43 +25,55 @@ export default function AdminPage() {
     setSearchKeyword(keyword);
   };
 
-  // 曲データ
+  // 曲データ（初期値のみ）
   const [songs] = useState<Song[]>(initialSongs);
 
-  // 🔍 検索結果（ID検索 + あいまい検索 + 再生回数ソート）
+  // 🔍 検索結果（ID検索 → あいまい検索 → 再生回数ソート）
   const sortedSongs = useMemo(() => {
     const q = searchKeyword.trim();
     if (!q) return [];
 
-    // ★ まず ID 完全一致をチェック
+    // 1) ID 完全一致
     const idMatch = songs.find((song) => song.id.toString() === q);
     if (idMatch) {
-      const raw = localStorage.getItem(`play_count_${idMatch.id}`);
+      const raw =
+        typeof window !== "undefined"
+          ? localStorage.getItem(`play_count_${idMatch.id}`)
+          : null;
       const playCount = raw ? Number(raw) : 0;
       return [{ ...idMatch, playCount }];
     }
 
-    // ★ 通常検索 + 再生回数付与
+    // 2) 通常検索 + 再生回数付与
     const filtered = searchSongs(songs, q).map((song) => {
-      const raw = localStorage.getItem(`play_count_${song.id}`);
+      const raw =
+        typeof window !== "undefined"
+          ? localStorage.getItem(`play_count_${song.id}`)
+          : null;
       const playCount = raw ? Number(raw) : 0;
       return { ...song, playCount };
     });
 
-    // ★ 再生回数 → 50音順 の優先度でソート
+    // 3) 再生回数 → 50音順
     return filtered.sort((a, b) => {
       if (b.playCount !== a.playCount) {
-        return b.playCount - a.playCount; // 再生回数多い順
+        return b.playCount - a.playCount;
       }
-      return a.titleKana.localeCompare(b.titleKana); // 同数なら50音順
+      return a.titleKana.localeCompare(b.titleKana);
     });
   }, [searchKeyword, songs]);
 
   return (
-    <main className="mx-auto max-w-xl px-4 py-6 text-white">
+    <main
+      className="
+        mx-auto max-w-xl px-4 py-6 text-white
+        bg-white/5 backdrop-blur-md rounded-xl
+        border border-white/10 shadow-lg
+      "
+    >
       {/* タイトル */}
       <h1 className="text-xl font-bold mb-6 tracking-wide drop-shadow">
-        デンモク　管理画面
+        デンモク 管理画面
       </h1>
 
       {/* 検索バー */}
