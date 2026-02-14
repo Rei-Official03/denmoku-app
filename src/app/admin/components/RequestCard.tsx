@@ -11,11 +11,12 @@ type Props = {
 
 export default function RequestCard({ item, onChange }: Props) {
   const router = useRouter();
-  const [data, setData] = useState(item);
+  const [data, setData] = useState<RequestItem>(item);
 
-  const load = () => {
+  // 型付き load()
+  const load = (): RequestItem[] => {
     const raw = localStorage.getItem("requests_v1");
-    return raw ? JSON.parse(raw) : [];
+    return raw ? (JSON.parse(raw) as RequestItem[]) : [];
   };
 
   const save = (list: RequestItem[]) => {
@@ -24,20 +25,26 @@ export default function RequestCard({ item, onChange }: Props) {
 
   const markProcessed = () => {
     const list = load();
-    const updated = list.map((r) =>
+
+    // r に型をつける
+    const updated = list.map((r: RequestItem) =>
       r.id === data.id ? { ...r, processed: true } : r
     );
+
     save(updated);
     setData({ ...data, processed: true });
-    onChange(); // ← これで RequestList が再読み込みされる
+    onChange();
   };
 
   const deleteItem = () => {
     if (!confirm("本当に削除しますか？")) return;
-    const list = load().filter((r) => r.id !== data.id);
+
+    // filter の r にも型をつける
+    const list = load().filter((r: RequestItem) => r.id !== data.id);
+
     save(list);
     setData(null as any);
-    onChange(); // ← 削除後に同期
+    onChange();
   };
 
   if (!data) return null;
