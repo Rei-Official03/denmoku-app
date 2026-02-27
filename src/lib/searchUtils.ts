@@ -23,32 +23,55 @@ export function normalize(text: string): string {
 }
 
 // --------------------------------------
-// メイン検索（あいまい検索）
+// 検索モード型（UI用）
 // --------------------------------------
-export function searchSongs(songs: Song[], query: string): Song[] {
+export type SearchMode = "title" | "artist" | "all";
+
+// --------------------------------------
+// メイン検索（mode 対応版）
+// --------------------------------------
+export function searchSongs(
+  songs: Song[],
+  query: string,
+  mode: SearchMode
+): Song[] {
   if (!query.trim()) return songs;
 
   const q = normalize(query);
 
   return songs.filter((song) => {
-    const fields = [
-      song.title,
-      song.titleKana,
-      song.artist,
-      song.artistKana,
-      song.genre,
-      song.scale,
-    ];
+    if (mode === "title") {
+      return (
+        normalize(song.title).includes(q) ||
+        normalize(song.titleKana).includes(q)
+      );
+    }
 
-    return fields.some((f) => normalize(f).includes(q));
+    if (mode === "artist") {
+      return (
+        normalize(song.artist).includes(q) ||
+        normalize(song.artistKana).includes(q)
+      );
+    }
+
+    // mode === "all"
+    return (
+      normalize(song.title).includes(q) ||
+      normalize(song.titleKana).includes(q) ||
+      normalize(song.artist).includes(q) ||
+      normalize(song.artistKana).includes(q) ||
+      normalize(song.genre).includes(q) ||
+      normalize(song.scale).includes(q)
+    );
   });
 }
 
 // --------------------------------------
-// 公開曲のみを返す（isPublic && instUrl）
+// 公開曲のみを返す（isPublic のみ判定）
+// instUrl が undefined / 空 でも絶対に落ちない安全版
 // --------------------------------------
 export function filterPublicSongs(songs: Song[]): Song[] {
-  return songs.filter((s) => s.isPublic && s.instUrl.trim() !== "");
+  return songs.filter((s) => s.isPublic);
 }
 
 // --------------------------------------
@@ -70,8 +93,3 @@ export function normalizeScale(scale: string): string {
     .replace(/♭/g, "b")
     .replace(/\s+/g, " ");
 }
-
-// --------------------------------------
-// 検索モード型（UI用）
-// --------------------------------------
-export type SearchMode = "title" | "artist" | "all";

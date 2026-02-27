@@ -19,7 +19,7 @@ export default function AdminSearchBar({
       <input
         value={keyword}
         onChange={(e) => setKeyword(e.target.value)}
-        placeholder="曲名・アーティスト名をひらがなで検索"
+        placeholder="ID or 曲・アーティスト名をひらがなで入力"
         className="
           flex-1 px-3 py-2 rounded-lg
           bg-white/15 backdrop-blur-md

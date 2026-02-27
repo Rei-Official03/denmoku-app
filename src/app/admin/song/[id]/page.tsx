@@ -97,6 +97,26 @@ export default function SongDetailPage() {
     );
   }
 
+  // -----------------------------------
+  // 歌うボタン（instUrl 無効でも安全）
+  // -----------------------------------
+  const handleSing = () => {
+    // 再生回数カウント
+    handlePlay();
+
+    // instUrl が無効なら YouTube ホームへ
+    const url =
+      typeof song.instUrl === "string" && song.instUrl.trim() !== ""
+        ? song.instUrl
+        : "https://www.youtube.com/";
+
+    // 新しいタブで開く
+    window.open(url, "_blank");
+
+    // コピー
+    navigator.clipboard.writeText(`${song.title} ${song.artist} カラオケ`);
+  };
+
   return (
     <main
       className="
@@ -136,21 +156,17 @@ export default function SongDetailPage() {
               ← 戻る
             </button>
 
-            {song.instUrl && (
-              <a
-                href={song.instUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onMouseDown={handlePlay}
-                className="
-                  px-4 py-2 rounded-lg
-                  bg-orange-400/20 hover:bg-orange-400/30
-                  backdrop-blur-sm text-orange-200 transition
-                "
-              >
-                歌う
-              </a>
-            )}
+            {/* instUrl が無効でも常に表示 */}
+            <button
+              onClick={handleSing}
+              className="
+                px-4 py-2 rounded-lg
+                bg-orange-400/20 hover:bg-orange-400/30
+                backdrop-blur-sm text-orange-200 transition
+              "
+            >
+              歌う
+            </button>
 
             <button
               onClick={() => setIsEditing(true)}

@@ -23,7 +23,6 @@ export default function CosmicBackground() {
   const [stars, setStars] = useState<Star[]>([]);
   const [glows, setGlows] = useState<Glow[]>([]);
 
-  // ⭐ ランダム星（SSR では生成しない）
   useEffect(() => {
     const starArr = Array.from({ length: 180 }).map(() => ({
       size: Math.random() * 2 + 0.8,
@@ -34,7 +33,6 @@ export default function CosmicBackground() {
     }));
     setStars(starArr);
 
-    // ✨ 光の粒子（漂う小さな光）
     const glowArr = Array.from({ length: 25 }).map((_, i) => ({
       id: i,
       size: Math.random() * 18 + 8,
@@ -48,13 +46,33 @@ export default function CosmicBackground() {
 
   return (
     <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-      {/* Night gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#1A2A5A] via-[#1A2450] to-[#0F1A3A]" />
 
-      {/* Nebula glows */}
-      <div className="absolute -top-40 -left-32 w-[420px] h-[420px] rounded-full bg-[#AEEBFF]/25 blur-3xl animate-pulse" />
-      <div className="absolute top-1/3 -right-40 w-[480px] h-[480px] rounded-full bg-[#F7B2C4]/25 blur-3xl animate-[pulse_6s_ease-in-out_infinite]" />
-      <div className="absolute bottom-0 left-1/4 w-[520px] h-[520px] rounded-full bg-[#E8B27A]/15 blur-3xl animate-[pulse_8s_ease-in-out_infinite]" />
+{/* ① 濃紺 Night gradient（薄め） */}
+<div className="absolute inset-0 bg-gradient-to-b from-[#0D1B4F]/85 via-[#0A1E63]/90 to-[#081A4A]/95" />
+
+{/* ② ぼかし背景（薄い・色味を抑える） */}
+<div className="absolute inset-0 overflow-hidden">
+  <div
+    className="absolute inset-0 bg-cover bg-center blur-[40px] scale-110 opacity-10"
+    style={{ backgroundImage: "url('/midari.jpg')" }}
+  />
+</div>
+
+{/* ③ イラスト本体（くっきり） */}
+<div
+  className="absolute inset-0 bg-contain bg-no-repeat bg-center opacity-100"
+  style={{ backgroundImage: "url('/midari.jpg')" }}
+/>
+
+{/* ④ 星空エフェクト（白光だけ残す） */}
+<div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.12),_transparent_70%)] mix-blend-screen" />
+
+{/* ⑤ ネビュラ・記号・流れ星（ピンク系を完全カット） */}
+{/* ★ ピンク・水色のネビュラを全部透明にする */}
+<div className="absolute -top-40 -left-32 w-[420px] h-[420px] rounded-full bg-transparent" />
+<div className="absolute top-1/3 -right-40 w-[480px] h-[480px] rounded-full bg-transparent" />
+<div className="absolute bottom-0 left-1/4 w-[520px] h-[520px] rounded-full bg-transparent" />
+
 
       {/* ⭐ Twinkling Stars */}
       <div className="absolute inset-0">

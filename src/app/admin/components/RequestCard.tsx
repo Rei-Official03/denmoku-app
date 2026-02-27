@@ -56,7 +56,7 @@ export default function RequestCard({ item, onChange }: Props) {
   // -----------------------------
   const deleteItem = () => {
     if (!data) return;
-    if (!confirm("本当に削除しますか？")) return;
+    if (!confirm("新しく登録しますか？")) return;
 
     const updated = load().filter((r) => r.id !== data.id);
     save(updated);
@@ -86,23 +86,29 @@ export default function RequestCard({ item, onChange }: Props) {
       <div className="flex gap-2 mt-3 text-xs">
         {/* Learned ボタン */}
         <button
-          onClick={() => {
-            markProcessed();
-            router.push(
-              `/admin/new?title=${encodeURIComponent(
-                data.title
-              )}&artist=${encodeURIComponent(data.artist)}`
-            );
-          }}
-          className="
-            px-3 py-1 rounded-lg
-            bg-gradient-to-r from-sky-300 via-sky-400 to-sky-500
-            hover:from-sky-400 hover:via-sky-500 hover:to-sky-600
-            text-white font-bold shadow-sm hover:shadow transition
-          "
-        >
-          Learned
-        </button>
+  onClick={() => {
+    // ① 処理済みにする（diff 作成のトリガー）
+    markProcessed();
+
+    // ② リクエスト曲を即削除
+    deleteItem(); // ← これを追加！
+
+    // ③ 新規曲追加ページへ遷移
+    router.push(
+      `/admin/new?title=${encodeURIComponent(
+        data.title
+      )}&artist=${encodeURIComponent(data.artist)}`
+    );
+  }}
+  className="
+    px-3 py-1 rounded-lg
+    bg-gradient-to-r from-sky-300 via-sky-400 to-sky-500
+    hover:from-sky-400 hover:via-sky-500 hover:to-sky-600
+    text-white font-bold shadow-sm hover:shadow transition
+  "
+>
+  Learned
+</button>
 
         {/* Delete ボタン */}
         <button

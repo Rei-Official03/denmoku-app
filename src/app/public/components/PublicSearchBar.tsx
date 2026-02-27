@@ -26,7 +26,16 @@ export default function PublicSearchBar({
   onClearResults: () => void; // ← ★ 追加
 }) {
   return (
-    <div className="space-y-3 bg-white/10 backdrop-blur-md p-4 rounded-xl shadow-md">
+    <div
+  className="
+    space-y-3
+    bg-gradient-to-r from-white/30 to-white/10
+    backdrop-blur-xl
+    p-4 rounded-xl
+    border border-white/50
+    shadow-xl shadow-black/40
+  "
+>
 
       {/* キーワード入力 + クリアボタン */}
       <div className="relative">
@@ -34,9 +43,9 @@ export default function PublicSearchBar({
           type="text"
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
-          placeholder="キーワードを入力"
+          placeholder="曲・アーティスト名をひらがなで入力"
           className="
-            w-full rounded-lg bg-white/20 text-white placeholder-white/50 p-2
+            w-full rounded-lg bg-white/30 text-white placeholder-white/80 p-2
             focus:outline-none pr-10
           "
         />
@@ -80,31 +89,31 @@ export default function PublicSearchBar({
             checked={mode === "artist"}
             onChange={() => setMode("artist")}
           />
-          アーティスト
+          アーティスト名
         </label>
       </div>
 
       {/* ジャンル + 検索結果クリアボタン */}
       <div className="flex items-center gap-3">
         <select
-          value={genre}
-          onChange={(e) => setGenre(e.target.value)}
-          className="flex-1 rounded-lg bg-white/20 text-white p-2 focus:outline-none"
-        >
-          <option value="" className="bg-[#1a1a1a] text-white">
-            ジャンル（指定なし）
-          </option>
+  value={genre}
+  onChange={(e) => setGenre(e.target.value)}
+  className="flex-1 rounded-lg bg-white/30 text-white/80 p-2 focus:outline-none"
+>
+  <option value="" className="bg-[#1b2347]/80 text-sky-200">
+  ジャンル（タップして選択）
+</option>
 
-          {genres.map((g) => (
-            <option
-              key={g}
-              value={g}
-              className="bg-[#1a1a1a] text-white"
-            >
-              {g}
-            </option>
-          ))}
-        </select>
+  {genres.map((g) => (
+    <option
+      key={g}
+      value={g}
+      className="bg-[#1b2347]/80 text-sky-200"
+    >
+      {g}
+    </option>
+  ))}
+</select>
 
         {/* ★ 検索結果クリアボタン */}
         <button
@@ -143,7 +152,7 @@ export default function PublicSearchBar({
             transition
           "
         >
-          ランダム
+          ランダム🎲
         </button>
       </div>
     </div>

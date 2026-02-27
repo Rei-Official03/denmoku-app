@@ -15,11 +15,7 @@ export const metadata: Metadata = {
   themeColor: "#14204A",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ja">
       <body
@@ -28,10 +24,6 @@ export default function RootLayout({
           "min-h-screen text-[#F7FAFF] antialiased bg-[#14204A] relative overflow-x-hidden",
         ].join(" ")}
       >
-        {/* Cosmic Lounge 背景 */}
-        <CosmicBackground />
-
-        {/* Page content */}
         <div className="relative z-10 min-h-screen">
           {children}
         </div>

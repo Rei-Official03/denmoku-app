@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import DiffCard from "./DiffCard";
+import { songs } from "@/lib/songData";
 
 type DiffMap = Record<string, Record<string, unknown>>;
 
@@ -48,9 +49,7 @@ export default function DiffList() {
 
     try {
       localStorage.setItem("song_edits_v1", JSON.stringify({}));
-    } catch {
-      // localStorage full などは握りつぶす
-    }
+    } catch {}
 
     reload();
   };
@@ -79,7 +78,7 @@ export default function DiffList() {
         {ids.map((id) => (
           <DiffCard
             key={id}
-            id={id}
+            id={Number(id)}     // ← diff の ID を渡す（正しい）
             patch={diffs[id]}
             onCleared={reload}
           />

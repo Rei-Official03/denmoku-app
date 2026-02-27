@@ -14,11 +14,15 @@ export default function SongCardPublic({ song, onSelect, isNew }: Props) {
     useState<ReturnType<typeof setTimeout> | null>(null);
   const [showToast, setShowToast] = useState(false);
 
+  // Public に出すのは ◎ / ○ / △ のみ
+  if (!["◎", "○", "△"].includes(song.skillLevel)) return null;
+
+  // コピー処理
   const copyInfo = () => {
     const text = `${song.id}. ${song.title} / ${song.artist}`;
     navigator.clipboard.writeText(text);
     setShowToast(true);
-    setTimeout(() => setShowToast(false), 1200);
+    setTimeout(() => setShowToast(false), 2000);
   };
 
   const handleClick = (e: React.MouseEvent) => {
@@ -30,9 +34,7 @@ export default function SongCardPublic({ song, onSelect, isNew }: Props) {
   };
 
   const handleTouchStart = () => {
-    const timer = setTimeout(() => {
-      copyInfo();
-    }, 500);
+    const timer = setTimeout(copyInfo, 500);
     setPressTimer(timer);
   };
 
@@ -40,64 +42,77 @@ export default function SongCardPublic({ song, onSelect, isNew }: Props) {
     if (pressTimer) clearTimeout(pressTimer);
   };
 
-  const levelColor =
-    {
-      "◎": "text-green-400",
-      "○": "text-blue-300",
-      "△": "text-yellow-300",
-      "×": "text-red-400",
-    }[song.skillLevel] ?? "text-white/60";
-
   return (
     <div className="relative">
-      {/* ★ NEW バッジ（カードの前面・左上外側） */}
+      {/* NEW バッジ */}
       {isNew && (
         <span
           className="
-            absolute -top-2 -left-2
-            z-20
-            text-[10px] font-bold
-            px-2 py-0.5 rounded-full
+            absolute -top-2 -left-2 z-20
+            px-2 py-0.5 rounded-full text-[10px] font-bold
             bg-orange-400/30 text-orange-100
-            backdrop-blur-md border border-white/20
-            shadow-sm
+            backdrop-blur-md border border-white/20 shadow-sm
           "
         >
           ★NEW
         </span>
       )}
 
-      <button
-        onClick={handleClick}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        className="
-          w-full text-left rounded-xl bg-white/10 backdrop-blur-md p-4
-          shadow-md hover:bg-white/15 active:scale-[0.98]
-          transition border border-white/10
-        "
-      >
-        <div className="flex items-center justify-between">
-          <div className="text-base font-bold text-white drop-shadow-sm">
-            {song.title}
-          </div>
-          <span className={`text-sm font-bold ${levelColor}`}>
-            {song.skillLevel}
-          </span>
-        </div>
+      {/* カード本体 */}
+<button
+  onClick={handleClick}
+  onTouchStart={handleTouchStart}
+  onTouchEnd={handleTouchEnd}
+  className="
+    w-full text-left rounded-xl p-4
+    bg-gradient-to-r from-white/30 to-white/10
+    backdrop-blur-xl
+    border border-white/50
+    shadow-xl shadow-black/40
+    hover:from-white/40 hover:to-white/20
+    active:scale-[0.98]
+    transition
+  "
+>
 
-        <div className="text-sm text-white/70 mt-1">{song.artist}</div>
+        <div className="flex flex-col gap-1 text-white">
+          {/* タイトル / アーティスト */}
+          <div className="text-sm font-bold">
+            {song.title}
+            <span className="font-normal text-white/100"> / {song.artist}</span>
+          </div>
+
+          {/* ジャンル ＋ スキルレベルバッジ */}
+          <div className="flex justify-between items-center text-xs">
+            <span className="text-white/80">🎵 {song.genre}</span>
+
+            {/* スキルレベルバッジ */}
+            {song.skillLevel === "◎" && (
+              <SkillBadge color="bg-green-400/40" icon="◎" text="気持ちよく歌っちゃう曲" />
+            )}
+
+            {song.skillLevel === "○" && (
+              <SkillBadge color="bg-blue-400/40" icon="○" text="それなりに歌える曲" />
+            )}
+
+            {song.skillLevel === "△" && (
+              <SkillBadge color="bg-yellow-400/40" icon="△" text="特訓させたいならこの曲" />
+            )}
+          </div>
+        </div>
       </button>
 
+      {/* トースト */}
       {showToast && (
         <div
           className="
-            fixed bottom-8 right-6 bg-white/20 backdrop-blur-md
-            text-white text-xs px-4 py-2 rounded-full shadow-lg
+            fixed bottom-8 right-6
+            px-4 py-2 rounded-full text-xs text-white
+            bg-white/20 backdrop-blur-md shadow-lg
             animate-toast
           "
         >
-          コピーしたよ！
+          コピーしたよ！そのままお便りBOXに貼ってね！
         </div>
       )}
 
@@ -109,9 +124,28 @@ export default function SongCardPublic({ song, onSelect, isNew }: Props) {
           100% { opacity: 0; transform: translateY(10px); }
         }
         .animate-toast {
-          animation: toast 1.2s ease-in-out forwards;
+          animation: toast 2s ease-in-out forwards;
         }
       `}</style>
+    </div>
+  );
+}
+
+/* スキルレベルバッジ（小コンポーネント化でスッキリ） */
+function SkillBadge({ color, icon, text }: { color: string; icon: string; text: string }) {
+  return (
+    <div
+      className={`
+        inline-flex items-center gap-1
+        px-2 py-1 rounded-full
+        ${color}
+        border border-white/40
+        shadow-md shadow-black/20
+        text-[11px] text-white
+      `}
+    >
+      <span className="text-white">{icon}</span>
+      <span className="tracking-wide text-white">{text}</span>
     </div>
   );
 }

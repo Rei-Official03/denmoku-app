@@ -1,31 +1,53 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 type DiffCardProps = {
-  id: string;
+  id: number;                     // ← localStorage のキー（削除・編集用）
   patch: Record<string, unknown>;
   onCleared: () => void;
 };
 
 export default function DiffCard({ id, patch, onCleared }: DiffCardProps) {
   const [copied, setCopied] = useState(false);
+  const router = useRouter();
 
   // -----------------------------------
   // コードコピー
   // -----------------------------------
   const copyPatch = () => {
-    const lines = Object.entries(patch).map(
-      ([key, value]) => `${key}: "${String(value)}",`
-    );
+    const lines = Object.entries(patch).map(([key, value]) => {
+    if (typeof value === "boolean") {
+      return `${key}: ${value},`; // ← boolean はそのまま
+    }
+    if (typeof value === "number") {
+      return `${key}: ${value},`; // ← number もそのまま
+    }
+    return `${key}: "${String(value)}",`; // ← string は "" で囲む
+  });
 
-    // id はコピーしない
-    const text = lines.join("\n");
+
+    // 今日の日付 YYYY-MM-DD
+    const today = new Date().toISOString().split("T")[0];
+
+    // createdAt を最後に追加
+    const text =
+      `id: ${id},\n` +        // ← ★ diff の ID を使う
+      lines.join("\n") +
+      `\ncreatedAt: "${today}",`;
 
     navigator.clipboard.writeText(text);
 
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+  };
+
+  // -----------------------------------
+  // 編集する（差分編集画面へ）
+  // -----------------------------------
+  const goEdit = () => {
+    router.push(`/admin/diff-edit/${id}`);
   };
 
   // -----------------------------------
@@ -40,11 +62,9 @@ export default function DiffCard({ id, patch, onCleared }: DiffCardProps) {
     try {
       const raw = localStorage.getItem("song_edits_v1");
       const obj = raw ? JSON.parse(raw) : {};
-      delete obj[id];
+      delete obj[id]; // ← localStorage のキーを削除
       localStorage.setItem("song_edits_v1", JSON.stringify(obj));
-    } catch {
-      // JSON 壊れてても落ちないように
-    }
+    } catch {}
 
     onCleared();
   };
@@ -69,6 +89,7 @@ export default function DiffCard({ id, patch, onCleared }: DiffCardProps) {
       )}
 
       <div className="flex justify-between items-center mb-2">
+        {/* 表示用 ID（diff の ID） */}
         <div className="font-bold">ID: {id}</div>
 
         <span
@@ -83,10 +104,11 @@ export default function DiffCard({ id, patch, onCleared }: DiffCardProps) {
 
       {/* 差分内容 */}
       <pre className="whitespace-pre-wrap text-[11px] text-white/70 mb-3">
-        {Object.entries(patch)
-          .map(([k, v]) => `${k}: "${String(v)}"`)
-          .join("\n")}
-      </pre>
+  {Object.entries(patch)
+    .filter(([k]) => k !== "id")
+    .map(([k, v]) => `${k}: "${String(v)}"`)
+    .join("\n")}
+</pre>
 
       <div className="flex gap-2">
         {/* コードコピー */}
@@ -100,6 +122,19 @@ export default function DiffCard({ id, patch, onCleared }: DiffCardProps) {
           "
         >
           コードをコピー
+        </button>
+
+        {/* 編集する */}
+        <button
+          onClick={goEdit}
+          className="
+            px-3 py-1 rounded-lg font-bold text-white
+            bg-gradient-to-r from-sky-300 via-sky-400 to-sky-500
+            hover:from-sky-400 hover:via-sky-500 hover:to-sky-600
+            shadow-sm hover:shadow transition
+          "
+        >
+          編集する
         </button>
 
         {/* 編集完了（差分削除） */}
