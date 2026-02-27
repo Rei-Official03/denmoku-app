@@ -171,7 +171,7 @@ export const songs: Song[] = [
     scale: "Fm",
     instUrl: "https://youtu.be/O7uDs1tw2TE",
     skillLevel: "◎",
-    isPublic: "true",
+    isPublic: true,
     createdAt: "2026-02-12",
 },
 {
@@ -638,7 +638,7 @@ artistKana: "かさむらとーた",
 scale: "G → G♯ → A",
 genre: "ボカロ",
 skillLevel: "○",
-isPublic: "true",
+isPublic: true,
   createdAt: "2026-02-12",
 },
 {
