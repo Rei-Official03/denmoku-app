@@ -52,14 +52,15 @@ export default function AdminPage() {
       return [{ ...idMatch, playCount }];
     }
 
-    const filtered = searchSongs(mergedSongs, q).map((song) => {
-      const raw =
-        typeof window !== "undefined"
-          ? localStorage.getItem(`play_count_${song.id}`)
-          : null;
-      const playCount = raw ? Number(raw) : 0;
-      return { ...song, playCount };
-    });
+const filtered = searchSongs(mergedSongs, q, "all").map((song) => {
+  const raw =
+    typeof window !== "undefined"
+      ? localStorage.getItem(`play_count_${song.id}`)
+      : null;
+
+  const playCount = raw ? Number(raw) : 0;
+  return { ...song, playCount };
+});
 
     return filtered.sort((a, b) => {
       if (b.playCount !== a.playCount) {
