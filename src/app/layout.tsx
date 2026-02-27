@@ -2,7 +2,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Inter } from "next/font/google";
-import CosmicBackground from "./public/components/CosmicBackground";
+import CosmicBackgroundPublic from "@/components/CosmicBackgroundPublic";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -24,6 +24,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           "min-h-screen text-[#F7FAFF] antialiased bg-[#14204A] relative overflow-x-hidden",
         ].join(" ")}
       >
+        {/* Cosmic Lounge 背景 */}
+        <CosmicBackgroundPublic />
+
+        {/* Page content */}
         <div className="relative z-10 min-h-screen">
           {children}
         </div>
