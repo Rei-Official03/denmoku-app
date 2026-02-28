@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import AdminSearchBar from "./components/AdminSearchBar";
@@ -29,6 +29,12 @@ export default function AdminPage() {
   const [keyword, setKeyword] = useState("");
   const [searchKeyword, setSearchKeyword] = useState("");
 
+  // ★ これが重要：クライアント側で確実に再レンダリングさせる
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
   const handleSearch = () => {
     setSearchKeyword(keyword);
   };
@@ -52,15 +58,15 @@ export default function AdminPage() {
       return [{ ...idMatch, playCount }];
     }
 
-const filtered = searchSongs(mergedSongs, q, "all").map((song) => {
-  const raw =
-    typeof window !== "undefined"
-      ? localStorage.getItem(`play_count_${song.id}`)
-      : null;
+    const filtered = searchSongs(mergedSongs, q, "all").map((song) => {
+      const raw =
+        typeof window !== "undefined"
+          ? localStorage.getItem(`play_count_${song.id}`)
+          : null;
 
-  const playCount = raw ? Number(raw) : 0;
-  return { ...song, playCount };
-});
+      const playCount = raw ? Number(raw) : 0;
+      return { ...song, playCount };
+    });
 
     return filtered.sort((a, b) => {
       if (b.playCount !== a.playCount) {
@@ -69,6 +75,11 @@ const filtered = searchSongs(mergedSongs, q, "all").map((song) => {
       return a.titleKana.localeCompare(b.titleKana);
     });
   }, [searchKeyword, mergedSongs]);
+
+  // ★ SSR → CSR の切り替え前に描画しない
+  if (!hydrated) {
+    return null;
+  }
 
   return (
     <>
