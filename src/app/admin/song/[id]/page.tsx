@@ -2,32 +2,30 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import type { Song } from "@/lib/songData";
 
 export default function SongDetailPage() {
   const router = useRouter();
   const params = useParams();
   const id = Number(params.id);
 
-  const [songs, setSongs] = useState([]);
-  const [song, setSong] = useState<any>(null);
+  const [songs, setSongs] = useState<Song[]>([]);
+  const [song, setSong] = useState<Song | null>(null);
 
-  // ★ クライアント側で songData を読み込む
   useEffect(() => {
     import("@/lib/songData").then((mod) => {
       setSongs(mod.songs);
     });
   }, []);
 
-  // ★ 対象曲をセット
   useEffect(() => {
     if (songs.length === 0) return;
-    const s = songs.find((s: any) => s.id === id) || null;
+    const s = songs.find((s) => s.id === id) || null;
     setSong(s);
   }, [songs, id]);
 
   const [isEditing, setIsEditing] = useState(false);
 
-  // 再生回数
   const [playCount, setPlayCount] = useState(0);
 
   useEffect(() => {
@@ -45,7 +43,6 @@ export default function SongDetailPage() {
     }
   };
 
-  // 編集用 state
   const [title, setTitle] = useState("");
   const [titleKana, setTitleKana] = useState("");
   const [artist, setArtist] = useState("");
@@ -55,7 +52,6 @@ export default function SongDetailPage() {
   const [skillLevel, setSkillLevel] = useState("");
   const [isPublic, setIsPublic] = useState(false);
 
-  // ★ 曲が読み込まれたら state に反映
   useEffect(() => {
     if (!song) return;
 
@@ -69,7 +65,6 @@ export default function SongDetailPage() {
     setIsPublic(song.isPublic);
   }, [song]);
 
-  // diff 保存
   const loadDiffs = () => {
     if (typeof window === "undefined") return {};
     try {
@@ -125,7 +120,7 @@ export default function SongDetailPage() {
 
   return (
     <main className="mx-auto max-w-xl px-4 py-6 text-white">
-      {/* 以下は元の UI と同じ */}
+      {/* UI は元のまま */}
       …
     </main>
   );

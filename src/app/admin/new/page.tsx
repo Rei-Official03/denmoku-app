@@ -1,16 +1,15 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import EditForm from "@/app/admin/_components/EditForm";
-
-// ★ クライアント側で安全に読み込むために dynamic import に変更
 import { useEffect, useState } from "react";
+import EditForm from "@/app/admin/_components/EditForm";
+import type { Song } from "@/lib/songData";
 
 export default function NewSongPage() {
   const params = useSearchParams();
   const router = useRouter();
 
-  const [songs, setSongs] = useState([]);
+  const [songs, setSongs] = useState<Song[]>([]);
 
   // ★ クライアント側で songData を読み込む
   useEffect(() => {
@@ -43,7 +42,7 @@ export default function NewSongPage() {
     if (typeof window === "undefined") return 1;
 
     const maxSongId =
-      songs.length > 0 ? Math.max(...songs.map((s: any) => s.id)) : 0;
+      songs.length > 0 ? Math.max(...songs.map((s) => s.id)) : 0;
 
     let maxDiffId = 0;
     try {
@@ -74,10 +73,7 @@ export default function NewSongPage() {
     const id = getNextId();
 
     const diffs = loadDiffs();
-    diffs[id] = {
-      id,
-      ...data,
-    };
+    diffs[id] = { id, ...data };
     saveDiffs(diffs);
 
     router.push("/admin");

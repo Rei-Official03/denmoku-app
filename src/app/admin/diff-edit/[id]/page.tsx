@@ -3,17 +3,17 @@
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import EditForm from "@/app/admin/_components/EditForm";
+import type { Song } from "@/lib/songData";
 
 export default function DiffEditPage() {
   const params = useParams();
   const router = useRouter();
   const id = Number(params.id);
 
-  const [songs, setSongs] = useState([]);
+  const [songs, setSongs] = useState<Song[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [initial, setInitial] = useState<any>(null);
 
-  // ★ クライアント側で songData を読み込む
   useEffect(() => {
     import("@/lib/songData").then((mod) => {
       setSongs(mod.songs);
@@ -34,7 +34,7 @@ export default function DiffEditPage() {
     const diffs = loadDiffs();
     const diff = diffs[id] ?? {};
 
-    const isNewSong = !songs.some((song: any) => song.id === id);
+    const isNewSong = !songs.some((song) => song.id === id);
 
     if (isNewSong) {
       setInitial({
@@ -49,7 +49,7 @@ export default function DiffEditPage() {
         isPublic: diff.isPublic ?? false,
       });
     } else {
-      const baseSong = songs.find((song: any) => song.id === id)!;
+      const baseSong = songs.find((song) => song.id === id)!;
 
       setInitial({
         title: diff.title ?? baseSong.title,

@@ -3,20 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import EditForm from "@/app/admin/_components/EditForm";
-
-type Song = {
-  id: number;
-  title: string;
-  titleKana: string;
-  artist: string;
-  artistKana: string;
-  genre: string;
-  scale: string;
-  instUrl: string;
-  skillLevel: string;
-  isPublic: boolean;
-  createdAt: string;
-};
+import type { Song } from "@/lib/songData";
 
 export default function EditSongPage() {
   const params = useParams();
@@ -27,7 +14,6 @@ export default function EditSongPage() {
   const [baseSong, setBaseSong] = useState<Song | null>(null);
   const [loaded, setLoaded] = useState(false);
 
-  // ★ クライアント側で songData を読み込む
   useEffect(() => {
     import("@/lib/songData").then((mod) => {
       setSongs(mod.songs);
@@ -87,15 +73,15 @@ export default function EditSongPage() {
   const diff = diffs[id] ?? {};
 
   const initial = {
-    title: diff.title ?? baseSong.title ?? "",
-    titleKana: diff.titleKana ?? baseSong.titleKana ?? "",
-    artist: diff.artist ?? baseSong.artist ?? "",
-    artistKana: diff.artistKana ?? baseSong.artistKana ?? "",
-    scale: diff.scale ?? baseSong.scale ?? "",
-    genre: diff.genre ?? baseSong.genre ?? "",
-    instUrl: diff.instUrl ?? baseSong.instUrl ?? "",
-    skillLevel: diff.skillLevel ?? baseSong.skillLevel ?? "",
-    isPublic: diff.isPublic ?? baseSong.isPublic ?? false,
+    title: diff.title ?? baseSong.title,
+    titleKana: diff.titleKana ?? baseSong.titleKana,
+    artist: diff.artist ?? baseSong.artist,
+    artistKana: diff.artistKana ?? baseSong.artistKana,
+    scale: diff.scale ?? baseSong.scale,
+    genre: diff.genre ?? baseSong.genre,
+    instUrl: diff.instUrl ?? baseSong.instUrl,
+    skillLevel: diff.skillLevel ?? baseSong.skillLevel,
+    isPublic: diff.isPublic ?? baseSong.isPublic,
   };
 
   return (
