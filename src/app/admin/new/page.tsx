@@ -1,11 +1,20 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import EditForm from "@/app/admin/_components/EditForm";
 import type { Song } from "@/lib/songData";
 
 export default function NewSongPage() {
+  return (
+    <Suspense fallback={null}>
+      <NewSongPageInner />
+    </Suspense>
+  );
+}
+
+function NewSongPageInner() {
   const params = useSearchParams();
   const router = useRouter();
 
@@ -87,4 +96,3 @@ export default function NewSongPage() {
     />
   );
 }
-// これはキャッシュクリア用のダミーコメント
