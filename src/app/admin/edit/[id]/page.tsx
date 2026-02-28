@@ -2,22 +2,38 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { songs as initialSongs, type Song } from "@/lib/songData";
 import EditForm from "@/app/admin/_components/EditForm";
 
-type Patch = Record<string, unknown>;
+type Song = {
+  id: number;
+  title: string;
+  titleKana: string;
+  artist: string;
+  artistKana: string;
+  genre: string;
+  scale: string;
+  instUrl: string;
+  skillLevel: string;
+  isPublic: boolean;
+  createdAt: string;
+};
 
 export default function EditSongPage() {
   const params = useParams();
   const router = useRouter();
   const id = Number(params.id);
 
+  const [songs, setSongs] = useState<Song[]>([]);
   const [baseSong, setBaseSong] = useState<Song | null>(null);
   const [loaded, setLoaded] = useState(false);
 
-  // -----------------------------------
-  // localStorage の差分を読む
-  // -----------------------------------
+  // ★ クライアント側で songData を読み込む
+  useEffect(() => {
+    import("@/lib/songData").then((mod) => {
+      setSongs(mod.songs);
+    });
+  }, []);
+
   const loadDiffs = () => {
     if (typeof window === "undefined") return {};
     try {
@@ -28,22 +44,16 @@ export default function EditSongPage() {
     }
   };
 
-  // -----------------------------------
-  // 初期値ロード（差分 → songData）
-  // -----------------------------------
   useEffect(() => {
     const diffs = loadDiffs();
     const diff = diffs[id];
 
-    const base = initialSongs.find((s) => s.id === id) || null;
+    const base = songs.find((s) => s.id === id) || null;
     setBaseSong(base);
 
     setLoaded(true);
-  }, [id]);
+  }, [id, songs]);
 
-  // -----------------------------------
-  // 保存処理（差分として保存）
-  // -----------------------------------
   const handleSave = (data: any) => {
     const diffs = loadDiffs();
     diffs[id] = data;
@@ -73,9 +83,6 @@ export default function EditSongPage() {
     );
   }
 
-  // -----------------------------------
-  // 初期値（差分があれば差分を優先）
-  // -----------------------------------
   const diffs = loadDiffs();
   const diff = diffs[id] ?? {};
 

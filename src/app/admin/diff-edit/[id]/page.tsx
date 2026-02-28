@@ -3,17 +3,23 @@
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import EditForm from "@/app/admin/_components/EditForm";
-import { songs } from "@/lib/songData"; // ★ 既存曲データ
 
 export default function DiffEditPage() {
   const params = useParams();
   const router = useRouter();
   const id = Number(params.id);
 
+  const [songs, setSongs] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [initial, setInitial] = useState<any>(null);
 
-  // localStorage 読み込み
+  // ★ クライアント側で songData を読み込む
+  useEffect(() => {
+    import("@/lib/songData").then((mod) => {
+      setSongs(mod.songs);
+    });
+  }, []);
+
   const loadDiffs = () => {
     if (typeof window === "undefined") return {};
     try {
@@ -28,11 +34,9 @@ export default function DiffEditPage() {
     const diffs = loadDiffs();
     const diff = diffs[id] ?? {};
 
-    // ★ 新規曲判定（songData に存在しない ID）
-    const isNewSong = !songs.some((song) => song.id === id);
+    const isNewSong = !songs.some((song: any) => song.id === id);
 
     if (isNewSong) {
-      // ★ 新規曲モード
       setInitial({
         title: diff.title ?? "",
         titleKana: diff.titleKana ?? "",
@@ -44,9 +48,8 @@ export default function DiffEditPage() {
         skillLevel: diff.skillLevel ?? "",
         isPublic: diff.isPublic ?? false,
       });
-   } else {
-  const baseSong = songs.find((song) => song.id === id)!;
-
+    } else {
+      const baseSong = songs.find((song: any) => song.id === id)!;
 
       setInitial({
         title: diff.title ?? baseSong.title,
@@ -62,23 +65,20 @@ export default function DiffEditPage() {
     }
 
     setLoaded(true);
-  }, [id]);
+  }, [id, songs]);
 
-  // 保存処理（新規曲も既存曲も diff に保存）
-const handleSave = (data: any) => {
-  const diffs = loadDiffs();
+  const handleSave = (data: any) => {
+    const diffs = loadDiffs();
 
-  // ★ data から id を除外する
-  const { id: _, ...rest } = data;
+    const { id: _, ...rest } = data;
+    diffs[id] = rest;
 
-  diffs[id] = rest;
+    try {
+      localStorage.setItem("song_edits_v1", JSON.stringify(diffs));
+    } catch {}
 
-  try {
-    localStorage.setItem("song_edits_v1", JSON.stringify(diffs));
-  } catch {}
-
-  router.push("/admin");
-};
+    router.push("/admin");
+  };
 
   if (!loaded || !initial) {
     return (
