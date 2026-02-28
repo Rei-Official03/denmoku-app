@@ -29,7 +29,7 @@ export default function AdminPage() {
   const [keyword, setKeyword] = useState("");
   const [searchKeyword, setSearchKeyword] = useState("");
 
-  // ★ これが重要：クライアント側で確実に再レンダリングさせる
+  // ★ SSR → CSR 切り替えを保証する
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
     setHydrated(true);
@@ -76,10 +76,8 @@ export default function AdminPage() {
     });
   }, [searchKeyword, mergedSongs]);
 
-  // ★ SSR → CSR の切り替え前に描画しない
-  if (!hydrated) {
-    return null;
-  }
+  // ★ hydration 前は描画しない（これが重要）
+  if (!hydrated) return null;
 
   return (
     <>
