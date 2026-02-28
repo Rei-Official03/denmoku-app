@@ -127,7 +127,7 @@ export default function RequestBox() {
           text-white text-xs px-4 py-2 rounded-full shadow-lg
           animate-toast
         ">
-          ありがとう！受け付けたよ
+          ありがとう！受け付けたよ♪
         </div>
       )}
 
