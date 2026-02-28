@@ -11,7 +11,6 @@ export default function NewSongPage() {
 
   const [songs, setSongs] = useState<Song[]>([]);
 
-  // ★ クライアント側で songData を読み込む
   useEffect(() => {
     import("@/lib/songData").then((mod) => {
       setSongs(mod.songs);
