@@ -3,7 +3,7 @@
 import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import EditForm from "@/app/admin/_components/EditForm";
+import EditForm from "@/app/admin-kanri/_components/EditForm";
 import type { Song } from "@/lib/songData";
 
 export default function NewSongPage() {
@@ -84,7 +84,7 @@ function NewSongPageInner() {
     diffs[id] = { id, ...data };
     saveDiffs(diffs);
 
-    router.push("/admin");
+    router.push("/admin-kanri");
   };
 
   return (

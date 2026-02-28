@@ -89,7 +89,7 @@ const filtered = searchSongs(mergedSongs, q, "all").map((song) => {
           keyword={keyword}
           setKeyword={setKeyword}
           onSearch={handleSearch}
-          onAdd={() => router.push("/admin/new")}
+          onAdd={() => router.push("/admin-kanri/new")}
         />
 
         {searchKeyword && (

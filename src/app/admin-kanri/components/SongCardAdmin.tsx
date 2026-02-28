@@ -14,9 +14,9 @@ export default function SongCardAdmin({ song }: Props) {
 
   const handleClick = () => {
     if (isNewSong) {
-      router.push(`/admin/diff-edit/${song.id}`);
+      router.push(`/admin-kanri/diff-edit/${song.id}`);
     } else {
-      router.push(`/admin/song/${song.id}`);
+      router.push(`/admin-kanri/song/${song.id}`);
     }
   };
 

@@ -47,7 +47,7 @@ export default function DiffCard({ id, patch, onCleared }: DiffCardProps) {
   // 編集する（差分編集画面へ）
   // -----------------------------------
   const goEdit = () => {
-    router.push(`/admin/diff-edit/${id}`);
+    router.push(`/admin-kanri/diff-edit/${id}`);
   };
 
   // -----------------------------------

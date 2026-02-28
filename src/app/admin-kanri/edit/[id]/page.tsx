@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import EditForm from "@/app/admin/_components/EditForm";
+import EditForm from "@/app/admin-kanri/_components/EditForm";
 import type { Song } from "@/lib/songData";
 
 export default function EditSongPage() {
@@ -48,7 +48,7 @@ export default function EditSongPage() {
       localStorage.setItem("song_edits_v1", JSON.stringify(diffs));
     } catch {}
 
-    router.push("/admin");
+    router.push("/admin-kanri");
   };
 
   if (!loaded) {

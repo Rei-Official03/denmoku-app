@@ -95,7 +95,7 @@ export default function RequestCard({ item, onChange }: Props) {
 
     // ③ 新規曲追加ページへ遷移
     router.push(
-      `/admin/new?title=${encodeURIComponent(
+      `/admin-kanri/new?title=${encodeURIComponent(
         data.title
       )}&artist=${encodeURIComponent(data.artist)}`
     );

@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import EditForm from "@/app/admin/_components/EditForm";
+import EditForm from "@/app/admin-kanri/_components/EditForm";
 import type { Song } from "@/lib/songData";
 
 export default function DiffEditPage() {
@@ -14,6 +14,7 @@ export default function DiffEditPage() {
   const [loaded, setLoaded] = useState(false);
   const [initial, setInitial] = useState<any>(null);
 
+  // ① songData を読み込む
   useEffect(() => {
     import("@/lib/songData").then((mod) => {
       setSongs(mod.songs);
@@ -30,13 +31,17 @@ export default function DiffEditPage() {
     }
   };
 
+  // ② songs が読み込まれてから initial を作る
   useEffect(() => {
+    if (songs.length === 0) return; // ← songs が来るまで待つ
+
     const diffs = loadDiffs();
     const diff = diffs[id] ?? {};
 
-    const isNewSong = !songs.some((song) => song.id === id);
+    const baseSong = songs.find((song) => song.id === id);
 
-    if (isNewSong) {
+    // 新規曲（songData に存在しない ID）
+    if (!baseSong) {
       setInitial({
         title: diff.title ?? "",
         titleKana: diff.titleKana ?? "",
@@ -49,8 +54,7 @@ export default function DiffEditPage() {
         isPublic: diff.isPublic ?? false,
       });
     } else {
-      const baseSong = songs.find((song) => song.id === id)!;
-
+      // 既存曲 → diff を上書きしてマージ
       setInitial({
         title: diff.title ?? baseSong.title,
         titleKana: diff.titleKana ?? baseSong.titleKana,
@@ -77,7 +81,7 @@ export default function DiffEditPage() {
       localStorage.setItem("song_edits_v1", JSON.stringify(diffs));
     } catch {}
 
-    router.push("/admin");
+    router.push("/admin-kanri");
   };
 
   if (!loaded || !initial) {
