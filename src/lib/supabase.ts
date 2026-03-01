@@ -1,0 +1,6 @@
+import { createClient } from "@supabase/supabase-js";
+
+export const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL=NEXT_PUBLIC_SUPABASE_URL=https://fectfmxibcecvsonquyu.supabase.co
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZlY3RmbXhpYmNlY3Zzb25xdXl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDExNTIsImV4cCI6MjA4NzkxNzE1Mn0.uxs_IYIi-ylNKOhBYOaDghWc9GwzianlJorxCalbNkY
+);
