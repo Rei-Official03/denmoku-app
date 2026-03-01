@@ -1,15 +1,7 @@
 "use client";
 
 import { useState } from "react";
-
-type RequestItem = {
-  id: string;
-  title: string;
-  artist: string;
-  from: string;
-  createdAt: string;
-  processed: boolean;
-};
+import { supabase } from "@/lib/supabase";
 
 export default function RequestBox() {
   const [title, setTitle] = useState("");
@@ -18,53 +10,32 @@ export default function RequestBox() {
   const [toast, setToast] = useState(false);
 
   // -----------------------------
-  // localStorage utilities
+  // Submit → Supabase に保存
   // -----------------------------
-  const loadRequests = (): RequestItem[] => {
-    if (typeof window === "undefined") return [];
-    try {
-      const raw = localStorage.getItem("requests_v1");
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  };
-
-  const saveRequests = (list: RequestItem[]) => {
-    if (typeof window === "undefined") return;
-    try {
-      localStorage.setItem("requests_v1", JSON.stringify(list));
-    } catch {
-      // localStorage full などは握りつぶす
-    }
-  };
-
-  // -----------------------------
-  // Submit
-  // -----------------------------
-  const handleSubmit = () => {
-    const newItem: RequestItem = {
-      id: crypto.randomUUID(),
+  const handleSubmit = async () => {
+    const { error } = await supabase.from("requests").insert({
       title,
       artist,
-      from,
-      createdAt: new Date().toISOString(),
+      from_name: from,
       processed: false,
-    };
+    });
 
-    const updated = [...loadRequests(), newItem];
-    saveRequests(updated);
+    if (error) {
+      console.error("Supabase insert error:", error);
+      return;
+    }
 
+    // Toast
     setToast(true);
     setTimeout(() => setToast(false), 1500);
 
+    // Reset
     setTitle("");
     setArtist("");
     setFrom("");
   };
 
-  const disabled =
-    !title.trim() || !artist.trim() || !from.trim();
+  const disabled = !title.trim() || !artist.trim() || !from.trim();
 
   return (
     <div className="mt-6 bg-white/10 backdrop-blur-md p-4 rounded-xl shadow-md text-white border border-white/10">
@@ -122,11 +93,13 @@ export default function RequestBox() {
 
       {/* Toast */}
       {toast && (
-        <div className="
+        <div
+          className="
           fixed bottom-10 right-6 bg-white/20 backdrop-blur-md
           text-white text-xs px-4 py-2 rounded-full shadow-lg
           animate-toast
-        ">
+        "
+        >
           ありがとう！受け付けたよ♪
         </div>
       )}

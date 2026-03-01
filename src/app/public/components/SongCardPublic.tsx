@@ -10,9 +10,8 @@ type Props = {
 };
 
 export default function SongCardPublic({ song, onSelect, isNew }: Props) {
-  const [pressTimer, setPressTimer] =
-    useState<ReturnType<typeof setTimeout> | null>(null);
   const [showToast, setShowToast] = useState(false);
+  const [lastTap, setLastTap] = useState(0);
 
   // Public に出すのは ◎ / ○ / △ のみ
   if (!["◎", "○", "△"].includes(song.skillLevel)) return null;
@@ -25,6 +24,7 @@ export default function SongCardPublic({ song, onSelect, isNew }: Props) {
     setTimeout(() => setShowToast(false), 2000);
   };
 
+  // PC：Ctrl+Click → コピー
   const handleClick = (e: React.MouseEvent) => {
     if (e.ctrlKey) {
       copyInfo();
@@ -33,13 +33,16 @@ export default function SongCardPublic({ song, onSelect, isNew }: Props) {
     onSelect(song);
   };
 
-  const handleTouchStart = () => {
-    const timer = setTimeout(copyInfo, 500);
-    setPressTimer(timer);
-  };
+  // iPhone：ダブルタップでコピー
+  const handleDoubleTap = () => {
+    const now = Date.now();
 
-  const handleTouchEnd = () => {
-    if (pressTimer) clearTimeout(pressTimer);
+    if (now - lastTap < 300) {
+      // ダブルタップ判定
+      copyInfo();
+    }
+
+    setLastTap(now);
   };
 
   return (
@@ -59,22 +62,20 @@ export default function SongCardPublic({ song, onSelect, isNew }: Props) {
       )}
 
       {/* カード本体 */}
-<button
-  onClick={handleClick}
-  onTouchStart={handleTouchStart}
-  onTouchEnd={handleTouchEnd}
-  className="
-    w-full text-left rounded-xl p-4
-    bg-gradient-to-r from-white/30 to-white/10
-    backdrop-blur-xl
-    border border-white/50
-    shadow-xl shadow-black/40
-    hover:from-white/40 hover:to-white/20
-    active:scale-[0.98]
-    transition
-  "
->
-
+      <button
+        onClick={handleClick}
+        onTouchStart={handleDoubleTap}  // ← ダブルタップ判定
+        className="
+          w-full text-left rounded-xl p-4
+          bg-gradient-to-r from-white/30 to-white/10
+          backdrop-blur-xl
+          border border-white/50
+          shadow-xl shadow-black/40
+          hover:from-white/40 hover:to-white/20
+          active:scale-[0.98]
+          transition
+        "
+      >
         <div className="flex flex-col gap-1 text-white">
           {/* タイトル / アーティスト */}
           <div className="text-sm font-bold">
@@ -86,15 +87,12 @@ export default function SongCardPublic({ song, onSelect, isNew }: Props) {
           <div className="flex justify-between items-center text-xs">
             <span className="text-white/80">🎵 {song.genre}</span>
 
-            {/* スキルレベルバッジ */}
             {song.skillLevel === "◎" && (
               <SkillBadge color="bg-green-400/40" icon="◎" text="気持ちよく歌っちゃう曲" />
             )}
-
             {song.skillLevel === "○" && (
               <SkillBadge color="bg-blue-400/40" icon="○" text="それなりに歌える曲" />
             )}
-
             {song.skillLevel === "△" && (
               <SkillBadge color="bg-yellow-400/40" icon="△" text="特訓させたいならこの曲" />
             )}
@@ -110,6 +108,7 @@ export default function SongCardPublic({ song, onSelect, isNew }: Props) {
             px-4 py-2 rounded-full text-xs text-white
             bg-white/20 backdrop-blur-md shadow-lg
             animate-toast
+	    z-[9999]
           "
         >
           コピーしたよ！そのままお便りBOXに貼ってね！
@@ -131,7 +130,7 @@ export default function SongCardPublic({ song, onSelect, isNew }: Props) {
   );
 }
 
-/* スキルレベルバッジ（小コンポーネント化でスッキリ） */
+/* スキルレベルバッジ */
 function SkillBadge({ color, icon, text }: { color: string; icon: string; text: string }) {
   return (
     <div

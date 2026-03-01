@@ -2,7 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { RequestItem } from "@/lib/requestStorage";
+import { supabase } from "@/lib/supabase";
+
+type RequestItem = {
+  id: string;
+  title: string;
+  artist: string;
+  from_name: string;
+  created_at: string;
+  processed: boolean;
+};
 
 type Props = {
   item: RequestItem;
@@ -14,54 +23,42 @@ export default function RequestCard({ item, onChange }: Props) {
   const [data, setData] = useState<RequestItem | null>(item);
 
   // -----------------------------
-  // localStorage utilities
+  // Mark as processed (Supabase)
   // -----------------------------
-  const load = (): RequestItem[] => {
-    if (typeof window === "undefined") return [];
-    try {
-      const raw = localStorage.getItem("requests_v1");
-      return raw ? (JSON.parse(raw) as RequestItem[]) : [];
-    } catch {
-      return [];
-    }
-  };
-
-  const save = (list: RequestItem[]) => {
-    if (typeof window === "undefined") return;
-    try {
-      localStorage.setItem("requests_v1", JSON.stringify(list));
-    } catch {
-      // localStorage full などは握りつぶす
-    }
-  };
-
-  // -----------------------------
-  // Mark as processed
-  // -----------------------------
-  const markProcessed = () => {
+  const markProcessed = async () => {
     if (!data) return;
 
-    const list = load();
-    const updated = list.map((r) =>
-      r.id === data.id ? { ...r, processed: true } : r
-    );
+    const { error } = await supabase
+      .from("requests")
+      .update({ processed: true })
+      .eq("id", data.id);
 
-    save(updated);
+    if (error) {
+      console.error("Supabase update error:", error);
+      return;
+    }
+
     setData({ ...data, processed: true });
     onChange();
   };
 
   // -----------------------------
-  // Delete item
+  // Delete item (Supabase)
   // -----------------------------
-  const deleteItem = () => {
+  const deleteItem = async () => {
     if (!data) return;
-    if (!confirm("新しく登録しますか？")) return;
+    if (!confirm("本当に削除しますか？")) return;
 
-    const updated = load().filter((r) => r.id !== data.id);
-    save(updated);
+    const { error } = await supabase
+      .from("requests")
+      .delete()
+      .eq("id", data.id);
 
-    // UI から即座に消す
+    if (error) {
+      console.error("Supabase delete error:", error);
+      return;
+    }
+
     setData(null);
     onChange();
   };
@@ -78,37 +75,33 @@ export default function RequestCard({ item, onChange }: Props) {
     >
       <div className="text-sm font-bold">{data.title}</div>
       <div className="text-xs text-white/70">{data.artist}</div>
-      <div className="text-xs text-white/50 mt-1">From: {data.from}</div>
+      <div className="text-xs text-white/50 mt-1">From: {data.from_name}</div>
       <div className="text-[10px] text-white/40 mt-1">
-        {new Date(data.createdAt).toLocaleString()}
+        {new Date(data.created_at).toLocaleString()}
       </div>
 
       <div className="flex gap-2 mt-3 text-xs">
         {/* Learned ボタン */}
         <button
-  onClick={() => {
-    // ① 処理済みにする（diff 作成のトリガー）
-    markProcessed();
+          onClick={async () => {
+            await markProcessed();
+            await deleteItem();
 
-    // ② リクエスト曲を即削除
-    deleteItem(); // ← これを追加！
-
-    // ③ 新規曲追加ページへ遷移
-    router.push(
-      `/admin-kanri/new?title=${encodeURIComponent(
-        data.title
-      )}&artist=${encodeURIComponent(data.artist)}`
-    );
-  }}
-  className="
-    px-3 py-1 rounded-lg
-    bg-gradient-to-r from-sky-300 via-sky-400 to-sky-500
-    hover:from-sky-400 hover:via-sky-500 hover:to-sky-600
-    text-white font-bold shadow-sm hover:shadow transition
-  "
->
-  Learned
-</button>
+            router.push(
+              `/admin-kanri/new?title=${encodeURIComponent(
+                data.title
+              )}&artist=${encodeURIComponent(data.artist)}`
+            );
+          }}
+          className="
+            px-3 py-1 rounded-lg
+            bg-gradient-to-r from-sky-300 via-sky-400 to-sky-500
+            hover:from-sky-400 hover:via-sky-500 hover:to-sky-600
+            text-white font-bold shadow-sm hover:shadow transition
+          "
+        >
+          Learned
+        </button>
 
         {/* Delete ボタン */}
         <button

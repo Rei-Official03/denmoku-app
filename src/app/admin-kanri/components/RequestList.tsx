@@ -1,31 +1,63 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 import RequestCard from "./RequestCard";
-import type { RequestItem } from "@/lib/requestStorage";
+
+type RequestItem = {
+  id: string;
+  title: string;
+  artist: string;
+  from_name: string;
+  created_at: string;
+  processed: boolean;
+};
 
 export default function RequestList() {
   const [requests, setRequests] = useState<RequestItem[]>([]);
 
   // -----------------------------
-  // 安全な localStorage load()
+  // Supabase からリクエスト取得
   // -----------------------------
-  const load = useCallback(() => {
-    if (typeof window === "undefined") return;
+  const load = async () => {
+    const { data, error } = await supabase
+      .from("requests")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-    try {
-      const raw = localStorage.getItem("requests_v1");
-      const list = raw ? (JSON.parse(raw) as RequestItem[]) : [];
-      setRequests(list);
-    } catch {
-      setRequests([]);
+    if (!error && data) {
+      setRequests(data);
     }
-  }, []);
+  };
 
   // 初回ロード
   useEffect(() => {
     load();
-  }, [load]);
+  }, []);
+
+  // -----------------------------
+  // Realtime 購読（INSERT / UPDATE / DELETE）
+  // -----------------------------
+  useEffect(() => {
+    const channel = supabase
+      .channel("requests-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "*", // insert / update / delete 全部
+          schema: "public",
+          table: "requests",
+        },
+        () => {
+          load(); // 変更があったら即リロード
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   if (requests.length === 0) {
     return (
@@ -45,12 +77,10 @@ export default function RequestList() {
       </div>
 
       <div className="space-y-3">
-        {/* 未処理 */}
         {unprocessed.map((req) => (
           <RequestCard key={req.id} item={req} onChange={load} />
         ))}
 
-        {/* 処理済み */}
         {processed.length > 0 && (
           <div className="mt-4 pt-3 border-t border-white/10 opacity-70 space-y-3">
             {processed.map((req) => (

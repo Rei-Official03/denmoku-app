@@ -215,7 +215,7 @@ export default function PublicPage() {
         />
 
         <div className="text-white/100 text-[12px] mt-2 mb-3 text-center select-none">
-          📌検索結果 : スマホは長押し、PC は Ctrl + クリックでコピーできます
+          📌検索結果 : ソングカードをダブルタップしてコピーしてね
         </div>
 
         <div className="flex flex-col md:flex-row gap-6 mt-4">
