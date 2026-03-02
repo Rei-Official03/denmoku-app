@@ -4,9 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 type DiffCardProps = {
-  id: number;                     // ← localStorage のキー（削除・編集用）
-  patch: Record<string, unknown>;
-  onCleared: () => void;
+  id: number;                     // diff の ID
+  patch: Record<string, unknown>; // diff の中身
+  onCleared: () => void;          // 削除後の reload
 };
 
 export default function DiffCard({ id, patch, onCleared }: DiffCardProps) {
@@ -14,26 +14,29 @@ export default function DiffCard({ id, patch, onCleared }: DiffCardProps) {
   const router = useRouter();
 
   // -----------------------------------
-  // コードコピー
+  // 表示用フォーマット
+  // -----------------------------------
+  const formatValue = (v: unknown) => {
+    if (v === true) return "公開";
+    if (v === false) return "非公開";
+    if (v === "" || v === undefined || v === null) return "（なし）";
+    return String(v);
+  };
+
+  // -----------------------------------
+  // コードコピー（SongDetailPage と整合）
   // -----------------------------------
   const copyPatch = () => {
-    const lines = Object.entries(patch).map(([key, value]) => {
-    if (typeof value === "boolean") {
-      return `${key}: ${value},`; // ← boolean はそのまま
-    }
-    if (typeof value === "number") {
-      return `${key}: ${value},`; // ← number もそのまま
-    }
-    return `${key}: "${String(value)}",`; // ← string は "" で囲む
-  });
-
-
-    // 今日の日付 YYYY-MM-DD
     const today = new Date().toISOString().split("T")[0];
 
-    // createdAt を最後に追加
+    const lines = Object.entries(patch).map(([key, value]) => {
+      if (typeof value === "boolean") return `${key}: ${value},`;
+      if (typeof value === "number") return `${key}: ${value},`;
+      return `${key}: "${String(value)}",`;
+    });
+
     const text =
-      `id: ${id},\n` +        // ← ★ diff の ID を使う
+      `id: ${id},\n` +
       lines.join("\n") +
       `\ncreatedAt: "${today}",`;
 
@@ -44,25 +47,25 @@ export default function DiffCard({ id, patch, onCleared }: DiffCardProps) {
   };
 
   // -----------------------------------
-  // 編集する（差分編集画面へ）
+  // 編集する（diff-edit へ）
   // -----------------------------------
   const goEdit = () => {
     router.push(`/admin-kanri/diff-edit/${id}`);
   };
 
   // -----------------------------------
-  // この差分だけ削除
+  // 差分削除（反映済み）
   // -----------------------------------
   const clearThis = () => {
     const ok = confirm(
-      "このIDの差分を削除しますか？\n（songData.ts に反映済みの場合のみ実行してください）"
+      "この差分を削除しますか？\n（songData.ts に反映済みの場合のみ実行してください）"
     );
     if (!ok) return;
 
     try {
       const raw = localStorage.getItem("song_edits_v1");
       const obj = raw ? JSON.parse(raw) : {};
-      delete obj[id]; // ← localStorage のキーを削除
+      delete obj[id];
       localStorage.setItem("song_edits_v1", JSON.stringify(obj));
     } catch {}
 
@@ -89,7 +92,6 @@ export default function DiffCard({ id, patch, onCleared }: DiffCardProps) {
       )}
 
       <div className="flex justify-between items-center mb-2">
-        {/* 表示用 ID（diff の ID） */}
         <div className="font-bold">ID: {id}</div>
 
         <span
@@ -102,13 +104,13 @@ export default function DiffCard({ id, patch, onCleared }: DiffCardProps) {
         </span>
       </div>
 
-      {/* 差分内容 */}
+      {/* 差分内容（整形済み） */}
       <pre className="whitespace-pre-wrap text-[11px] text-white/70 mb-3">
-  {Object.entries(patch)
-    .filter(([k]) => k !== "id")
-    .map(([k, v]) => `${k}: "${String(v)}"`)
-    .join("\n")}
-</pre>
+{Object.entries(patch)
+  .filter(([k]) => k !== "id")
+  .map(([k, v]) => `${k}: ${formatValue(v)}`)
+  .join("\n")}
+      </pre>
 
       <div className="flex gap-2">
         {/* コードコピー */}
@@ -147,7 +149,7 @@ export default function DiffCard({ id, patch, onCleared }: DiffCardProps) {
             shadow-sm hover:shadow transition
           "
         >
-          編集完了
+          差分を削除（反映済み）
         </button>
       </div>
 

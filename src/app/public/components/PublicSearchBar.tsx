@@ -12,7 +12,7 @@ export default function PublicSearchBar({
   genres,
   onSearch,
   onRandom,
-  onClearResults, // ← ★ 追加（PublicPage 側で用意）
+  onClearResults, // ← ★ ちゃんと受け取る
 }: {
   keyword: string;
   setKeyword: (v: string) => void;
@@ -23,19 +23,19 @@ export default function PublicSearchBar({
   genres: string[];
   onSearch: () => void;
   onRandom: () => void;
-  onClearResults: () => void; // ← ★ 追加
+  onClearResults: () => void; // ← ★ 型もOK
 }) {
   return (
     <div
-  className="
-    space-y-3
-    bg-gradient-to-r from-white/30 to-white/10
-    backdrop-blur-xl
-    p-4 rounded-xl
-    border border-white/50
-    shadow-xl shadow-black/40
-  "
->
+      className="
+        space-y-3
+        bg-gradient-to-r from-white/30 to-white/10
+        backdrop-blur-xl
+        p-4 rounded-xl
+        border border-white/50
+        shadow-xl shadow-black/40
+      "
+    >
 
       {/* キーワード入力 + クリアボタン */}
       <div className="relative">
@@ -96,24 +96,24 @@ export default function PublicSearchBar({
       {/* ジャンル + 検索結果クリアボタン */}
       <div className="flex items-center gap-3">
         <select
-  value={genre}
-  onChange={(e) => setGenre(e.target.value)}
-  className="flex-1 rounded-lg bg-white/30 text-white/80 p-2 focus:outline-none"
->
-  <option value="" className="bg-[#1b2347]/80 text-sky-200">
-  ジャンル（タップして選択）
-</option>
+          value={genre}
+          onChange={(e) => setGenre(e.target.value)}
+          className="flex-1 rounded-lg bg-white/30 text-white/80 p-2 focus:outline-none"
+        >
+          <option value="" className="bg-[#1b2347]/80 text-sky-200">
+            ジャンル（タップして選択）
+          </option>
 
-  {genres.map((g) => (
-    <option
-      key={g}
-      value={g}
-      className="bg-[#1b2347]/80 text-sky-200"
-    >
-      {g}
-    </option>
-  ))}
-</select>
+          {genres.map((g) => (
+            <option
+              key={g}
+              value={g}
+              className="bg-[#1b2347]/80 text-sky-200"
+            >
+              {g}
+            </option>
+          ))}
+        </select>
 
         {/* ★ 検索結果クリアボタン */}
         <button
@@ -135,8 +135,8 @@ export default function PublicSearchBar({
           onClick={onSearch}
           className="
             flex-1 py-2 rounded-lg font-bold text-white
-            bg-gradient-to-r from-sky-400 via-sky-300 to-sky-200
-            hover:from-sky-500 hover:via-sky-400 hover:to-sky-300
+            bg-gradient-to-r from-[#0F1A3A] via-[#7C8CFF] to-white
+            hover:from-[#1A2A5A] hover:via-[#8EA0FF] hover:to-white
             transition
           "
         >
@@ -147,8 +147,8 @@ export default function PublicSearchBar({
           onClick={onRandom}
           className="
             flex-1 py-2 rounded-lg font-bold text-white
-            bg-gradient-to-r from-sky-200 via-sky-300 to-sky-400
-            hover:from-sky-300 hover:via-sky-400 hover:to-sky-500
+            bg-gradient-to-r from-white via-[#7C8CFF] to-[#0F1A3A]
+            hover:from-white hover:via-[#8EA0FF] hover:to-[#1A2A5A]
             transition
           "
         >

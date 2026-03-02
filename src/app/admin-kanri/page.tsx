@@ -4,7 +4,8 @@ import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import AdminSearchBar from "./components/AdminSearchBar";
-import SongCardAdmin from "@/app/admin-kanri/components/SongCardAdmin";import RequestList from "./components/RequestList";
+import SongCardAdmin from "@/app/admin-kanri/components/SongCardAdmin";
+import RequestList from "./components/RequestList";
 import DiffList from "./components/DiffList";
 import CosmicBackgroundAdmin from "@/components/CosmicBackgroundAdmin";
 
@@ -22,13 +23,22 @@ const loadDiffs = () => {
   }
 };
 
+// ◎ から 5 曲ランダム（管理側）
+const pickRandomAdminSongs = (songs) => {
+  const good = songs.filter((s) => s.skillLevel === "◎");
+  const shuffled = [...good].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, 5);
+};
+
 export default function AdminPage() {
   const router = useRouter();
 
   const [keyword, setKeyword] = useState("");
   const [searchKeyword, setSearchKeyword] = useState("");
 
-  // ★ SSR → CSR 切り替えを保証する
+  const [randomResults, setRandomResults] = useState(null);
+
+  // SSR → CSR 切り替え
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
     setHydrated(true);
@@ -36,37 +46,36 @@ export default function AdminPage() {
 
   const handleSearch = () => {
     setSearchKeyword(keyword);
+    setRandomResults(null); // ← ランダム結果を消す
   };
 
+  const handleRandom = () => {
+    const results = pickRandomAdminSongs(mergedSongs);
+    setRandomResults(results);
+    setSearchKeyword(""); // ← 検索結果を消す
+  };
+
+  // ★ mergeSongs の結果を一覧に使う（playCount も統合済み）
   const mergedSongs = useMemo(() => {
     const diffs = loadDiffs();
     return mergeSongs(diffs);
   }, []);
 
+  // ★ 検索結果
   const sortedSongs = useMemo(() => {
     const q = searchKeyword.trim();
     if (!q) return [];
 
+    // ID 完全一致
     const idMatch = mergedSongs.find((song) => song.id.toString() === q);
     if (idMatch) {
-      const raw =
-        typeof window !== "undefined"
-          ? localStorage.getItem(`play_count_${idMatch.id}`)
-          : null;
-      const playCount = raw ? Number(raw) : 0;
-      return [{ ...idMatch, playCount }];
+      return [idMatch];
     }
 
-    const filtered = searchSongs(mergedSongs, q, "all").map((song) => {
-      const raw =
-        typeof window !== "undefined"
-          ? localStorage.getItem(`play_count_${song.id}`)
-          : null;
+    // 通常検索
+    const filtered = searchSongs(mergedSongs, q, "all");
 
-      const playCount = raw ? Number(raw) : 0;
-      return { ...song, playCount };
-    });
-
+    // playCount → titleKana の順でソート
     return filtered.sort((a, b) => {
       if (b.playCount !== a.playCount) {
         return b.playCount - a.playCount;
@@ -75,7 +84,6 @@ export default function AdminPage() {
     });
   }, [searchKeyword, mergedSongs]);
 
-  // ★ hydration 前は描画しない（これが重要）
   if (!hydrated) return null;
 
   return (
@@ -100,6 +108,34 @@ export default function AdminPage() {
           onAdd={() => router.push("/admin-kanri/new")}
         />
 
+        {/* ランダムボタン */}
+        <button
+          onClick={handleRandom}
+          className="
+            mt-3 mb-6 px-4 py-2 rounded-lg
+            bg-white/10 hover:bg-white/20
+            text-sm font-bold transition
+          "
+        >
+          ランダム（◎ × 5）
+        </button>
+
+        {/* ランダム結果 */}
+        {randomResults && (
+          <div className="mb-10">
+            <div className="text-white/70 text-sm mb-3">
+              ランダム選曲（◎ × 5）
+            </div>
+
+            <div className="space-y-3">
+              {randomResults.map((song) => (
+                <SongCardAdmin key={song.id} song={song} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 検索結果 */}
         {searchKeyword && (
           <div className="mb-10">
             <div className="text-white/70 text-sm mb-3">
@@ -114,7 +150,10 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* リクエスト一覧 */}
         <RequestList />
+
+        {/* Diff 一覧 */}
         <DiffList />
       </main>
     </>

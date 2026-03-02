@@ -1,22 +1,14 @@
 "use client";
 
-import { Toaster, toast } from "react-hot-toast";
-import { useMemo, useState, useEffect } from "react";
-import { mergeSongs } from "@/lib/mergeSongs";
-import { songs } from "@/lib/songData";
-import {
-  searchSongs,
-  filterPublicSongs,
-  getGenres,
-  type SearchMode,
-} from "@/lib/searchUtils";
+import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 import PublicSearchBar from "./components/PublicSearchBar";
 import SongCardPublic from "./components/SongCardPublic";
 import CosmicBackgroundPublic from "@/components/CosmicBackgroundPublic";
-import RequestBox from "./components/RequestBox";
 
-const PAGE_SIZE = 10;
+import { searchSongs } from "@/lib/searchUtils";
+import { mergeSongs } from "@/lib/mergeSongs";
 
 // localStorage 読み込み
 const loadDiffs = () => {
@@ -29,34 +21,79 @@ const loadDiffs = () => {
   }
 };
 
-export default function PublicPage() {
-  // diff を読み込んで合成（createdAt 正規化 & isNew 付与済み）
-  const mergedSongs = useMemo(() => {
-    const diffs = loadDiffs();
-    return mergeSongs(diffs);
-  }, []);
+// 公開側ランダム（◎ / ○ / △）
+const pickRandomPublicSongs = (songs) => {
+  const publicSongs = songs.filter((s) => s.isPublic);
 
-  // UI 状態
+  const good = publicSongs.filter((s) => s.skillLevel === "◎");
+  const ok = publicSongs.filter((s) => s.skillLevel === "○");
+  const weak = publicSongs.filter((s) => s.skillLevel === "△");
+
+  const pick = (arr) =>
+    arr.length > 0 ? arr[Math.floor(Math.random() * arr.length)] : null;
+
+  let a = pick(good);
+  let b = pick(ok);
+  let c = pick(weak);
+
+  if (!a) a = pick(ok) || pick(weak);
+  if (!b) b = pick(good) || pick(weak);
+  if (!c) c = pick(good) || pick(ok);
+
+  return [a, b, c].filter(Boolean);
+};
+
+export default function PublicPage() {
+  const router = useRouter();
+
   const [keyword, setKeyword] = useState("");
-  const [mode, setMode] = useState<SearchMode>("all");
+  const [mode, setMode] = useState("all");
   const [genre, setGenre] = useState("");
 
   const [searchKeyword, setSearchKeyword] = useState("");
-  const [searchMode, setSearchMode] = useState<SearchMode>("all");
+  const [searchMode, setSearchMode] = useState("all");
   const [searchGenre, setSearchGenre] = useState("");
 
   const [hasSearched, setHasSearched] = useState(false);
   const [page, setPage] = useState(1);
 
-  const [ranking, setRanking] = useState<any[]>([]);
-  const [recentSongs, setRecentSongs] = useState<any[]>([]);
+  const [randomResults, setRandomResults] = useState(null);
 
-  const [randomResults, setRandomResults] = useState<any[] | null>(null);
-  const [recentExpanded, setRecentExpanded] = useState(false);
+  // SSR → CSR 切り替え
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
 
-  const genres = useMemo(() => getGenres(mergedSongs), [mergedSongs]);
+// mergeSongs（diff + 新規曲 + playCount）
+const mergedSongs = useMemo(() => {
+  const diffs = loadDiffs();
+  return mergeSongs(diffs);
+}, []);
 
-  // 🏆 人気ランキング
+// クリア
+const handleClearResults = () => {
+  setKeyword("");
+  setMode("all");
+  setGenre("");
+
+  // 検索状態もリセット
+  setSearchKeyword("");
+  setSearchMode("all");
+  setSearchGenre("");
+
+  setHasSearched(false);
+  setRandomResults(null);
+  setPage(1);
+};
+
+  // ジャンル一覧
+  const genres = useMemo(() => {
+    const set = new Set();
+    mergedSongs.forEach((s) => set.add(s.genre));
+    return Array.from(set);
+  }, [mergedSongs]);
+
+  // ⭐ 人気ランキング（playCount順）
+  const [ranking, setRanking] = useState([]);
   useEffect(() => {
     const ranked = mergedSongs
       .map((song) => {
@@ -74,126 +111,81 @@ export default function PublicPage() {
     setRanking(ranked);
   }, [mergedSongs]);
 
-  // 最近追加
+  // 🆕 最近追加された曲（createdAt の新しい順）
+  const [recentSongs, setRecentSongs] = useState([]);
+  const [showAllRecent, setShowAllRecent] = useState(false);
   useEffect(() => {
-    const recent = mergedSongs
+    const sorted = [...mergedSongs]
       .filter((s) => s.isPublic)
       .sort((a, b) => {
         const da = new Date(a.createdAt).getTime();
         const db = new Date(b.createdAt).getTime();
         return db - da;
-      })
-      .slice(0, 50);
+      });
 
-    setRecentSongs(recent);
+    setRecentSongs(sorted);
   }, [mergedSongs]);
 
-  // 検索
+  // 検索実行
   const handleSearch = () => {
     setSearchKeyword(keyword);
     setSearchMode(mode);
     setSearchGenre(genre);
     setHasSearched(true);
     setPage(1);
-  };
-
-  const handleClearResults = () => {
-    setKeyword("");
-    setGenre("");
-    setMode("all");
-    setHasSearched(false);
     setRandomResults(null);
   };
 
-  // ランダム
+  // ランダム実行
   const handleRandom = () => {
-    if (mode !== "all") {
-      toast("「すべて」を選択してから押してね", {
-        style: {
-          background: "rgba(20, 32, 74, 0.6)",
-          backdropFilter: "blur(8px)",
-          color: "#F7FAFF",
-          border: "1px solid rgba(255,255,255,0.2)",
-          borderRadius: "12px",
-        },
-      });
-      return;
-    }
-
-    let pool = mergedSongs.filter((s) => s.isPublic);
-    const allowedLevels = ["△", "○", "◎"];
-    pool = pool.filter((s) => allowedLevels.includes(s.skillLevel));
-
-    if (genre) {
-      pool = pool.filter((s) => s.genre === genre);
-    }
-
-    if (pool.length === 0) {
-      toast("条件に合う曲が見つからなかったよ…", {
-        style: {
-          background: "rgba(20, 32, 74, 0.6)",
-          backdropFilter: "blur(8px)",
-          color: "#F7FAFF",
-          border: "1px solid rgba(255,255,255,0.2)",
-          borderRadius: "12px",
-        },
-      });
-      return;
-    }
-
-    const shuffled = [...pool].sort(() => Math.random() - 0.5);
-    const selected = shuffled.slice(0, 3);
-
-    setRandomResults(selected);
-    setHasSearched(true);
-    setPage(1);
+    const results = pickRandomPublicSongs(mergedSongs);
+    setRandomResults(results);
+    setHasSearched(false);
   };
 
   // 検索結果
   const filteredSongs = useMemo(() => {
     if (!hasSearched) return [];
 
-    let result = searchSongs(mergedSongs, searchKeyword, searchMode);
+    const q = searchKeyword.trim();
+    const result = searchSongs(mergedSongs, q, searchMode);
 
-    if (searchGenre) {
-      result = result.filter((s) => s.genre === searchGenre);
-    }
+    const genreFiltered =
+      searchGenre === "" ? result : result.filter((s) => s.genre === searchGenre);
 
-    result = filterPublicSongs(result);
+    return genreFiltered.filter((s) => s.isPublic);
+  }, [hasSearched, searchKeyword, searchMode, searchGenre, mergedSongs]);
 
-    return result.sort((a, b) => a.titleKana.localeCompare(b.titleKana));
-  }, [searchKeyword, searchGenre, searchMode, hasSearched, mergedSongs]);
+  // ページング
+  const pageSize = 10;
+  const totalPages = Math.ceil(filteredSongs.length / pageSize);
+  const pagedSongs = filteredSongs.slice((page - 1) * pageSize, page * pageSize);
 
-  const hasGoodSongs = filteredSongs.some(
-    (s) => s.skillLevel === "◎" || s.skillLevel === "○"
-  );
-
-  const showRequestBox =
-    hasSearched && (filteredSongs.length === 0 || !hasGoodSongs);
-
-  const totalPages = useMemo(() => {
-    if (!hasSearched) return 1;
-    return Math.max(1, Math.ceil(filteredSongs.length / PAGE_SIZE));
-  }, [filteredSongs.length, hasSearched]);
-
-  const pagedSongs = useMemo(() => {
-    if (!hasSearched) return [];
-    const start = (page - 1) * PAGE_SIZE;
-    return filteredSongs.slice(start, start + PAGE_SIZE);
-  }, [filteredSongs, page, hasSearched]);
-
-  const finalSongs = randomResults ?? pagedSongs;
+  if (!hydrated) return null;
 
   return (
     <>
-      <Toaster position="top-center" />
+      <CosmicBackgroundPublic />
 
-      <main className="relative mx-auto w-full max-w-4xl px-4 py-6 text-black">
-        <CosmicBackgroundPublic />
+      <main
+        className="
+          mx-auto max-w-xl px-4 py-6 text-white
+          bg-transparent
+        "
+      >
+<div className="sticky top-0 z-20 pb-4 bg-transparent">
+        <h1
+            className="
+              text-4xl font-extrabold
+              bg-gradient-to-r from-white via-[#7C8CFF] to-[#0F1A3A]
+              bg-clip-text text-transparent
+              drop-shadow-xl tracking-wide
+              mb-6
+            "
+          ><center>
+            SongList ✦
+          </center></h1>
 
-        <h1 className="text-center text-xl font-bold mb-4 tracking-wide drop-shadow">
-          Cosmic Lounge 🎧
-        </h1>
 
         <PublicSearchBar
           keyword={keyword}
@@ -203,160 +195,133 @@ export default function PublicPage() {
           genre={genre}
           setGenre={setGenre}
           genres={genres}
-          onSearch={() => {
-            setRandomResults(null);
-            handleSearch();
-          }}
-          onRandom={() => {
-            setRandomResults(null);
-            handleRandom();
-          }}
+          onSearch={handleSearch}
+          onRandom={handleRandom}
           onClearResults={handleClearResults}
         />
 
-        <div className="text-white/100 text-[12px] mt-2 mb-3 text-center select-none">
-          📌検索結果 : ソングカードをダブルタップしてコピーしてね
+        {/* 🔍 検索前の説明エリア */}
+        {!hasSearched && !randomResults && (
+  <div
+    className="
+      mt-10 p-4 rounded-xl
+      bg-white/10 text-white
+      backdrop-blur-sm
+      border border-white/20
+      shadow-lg shadow-black/30
+      text-center text-md
+      font-bold
+    "
+  >
+    検索するとここに結果が表示されます
+  </div>
+)}
+
+        {/* ダブルタップ説明 */}
+        <div className="mt-4 text-lg text-white font-bold text-center drop-shadow-[0_0_6px_#0F1A3A]">
+          📌 リクエスト曲はカードをダブルタップでコピーできます
         </div>
+</div>
+        {/* ⭐ 人気ランキング（1枚のカード） */}
+{!hasSearched && !randomResults && (
+  <div
+    className="
+      mt-10 p-4 rounded-xl
+      bg-white/10 text-white
+      backdrop-blur-sm
+    "
+  >
+    <h2 className="text-2xl font-bold mb-4 tracking-wide"><center>
+🏆人気ランキング🏆
+　　</center></h2>
 
-        <div className="flex flex-col md:flex-row gap-6 mt-4">
-          {/* 左：検索結果 */}
-          <div className="flex-1">
-            {hasSearched && (
-              <>
-                <div className="text-white/80 text-xs mt-1 mb-2">
-                  {randomResults
-                    ? randomResults.length
-                    : filteredSongs.length}{" "}
-                  件ヒット
-                  {randomResults === null && totalPages > 1 && (
-                    <span className="ml-2 text-white/90">
-                      （{page} / {totalPages} ページ）
-                    </span>
-                  )}
-                </div>
-
-                {/* grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {finalSongs.map((song) => (
-                    <SongCardPublic
-                      key={song.id}
-                      song={song}
-                      onSelect={() => {}}
-                      isNew={song.isNew}
-                    />
-                  ))}
-                </div>
-
-                {showRequestBox ? (
-                  <RequestBox />
-                ) : (
-                  <>
-                    {randomResults === null && totalPages > 1 && (
-                      <div className="mt-4 flex items-center justify-center gap-4 text-xs">
-                        <button
-                          type="button"
-                          onClick={() => setPage((p) => Math.max(1, p - 1))}
-                          disabled={page === 1}
-                          className="
-                            px-3 py-1 rounded-full
-                            border border-white/60
-                            bg-gradient-to-r from-white/30 to-white/15
-                            shadow-md shadow-black/30
-                            text-white
-                            hover:from-white/40 hover:to-white/25
-                            disabled:opacity-40
-                            transition
-                          "
-                        >
-                          ← 前へ
-                        </button>
-
-                        <span className="text-white">
-                          {page} / {totalPages}
-                        </span>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setPage((p) => Math.min(totalPages, p + 1))
-                          }
-                          disabled={page === totalPages}
-                          className="
-                            px-3 py-1 rounded-full
-                            border border-white/60
-                            bg-gradient-to-r from-white/30 to-white/15
-                            shadow-md shadow-black/30
-                            text-white
-                            hover:from-white/40 hover:to-white/25
-                            disabled:opacity-40
-                            transition
-                          "
-                        >
-                          次へ →
-                        </button>
-                      </div>
-                    )}
-                  </>
-                )}
-              </>
-            )}
+    <div className="space-y-4">
+      {ranking.slice(0, 5).map((song, index) => (
+        <div key={song.id}>
+          {/* ○位 + 曲名 / アーティスト名 */}
+          <div className="font-bold">
+            {index + 1}位 {song.title} / {song.artist}
           </div>
 
-          {/* 右：ランキング + 最近追加 */}
-          <div className="md:w-64 space-y-6">
-            {/* 人気ランキング */}
-            <div className="space-y-2">
-              <h2 className="text-lg font-bold text-white/80">人気ランキング</h2>
+          {/* ♪ジャンル　　○回 */}
+          <div className="flex justify-between text-base text-white/90 mt-1">
+  <span>♪ {song.genre}</span>
+  <span>{song.playCount} 回</span>
+</div>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
 
-              {ranking.slice(0, 5).map((song, i) => (
-                <div
-                  key={song.id}
-                  className="px-3 py-2 rounded-lg bg-white/10 backdrop-blur-sm text-white/80"
-                >
-                  {i + 1}位：{song.title}（{song.playCount} 回）
-                </div>
+        {/* 🆕 最近追加された曲（5件＋and more） */}
+{!hasSearched && !randomResults && (
+  <div className="mt-10">
+    <h2 className="text-lg font-bold mb-3">最近追加された曲</h2>
+
+    <div className="space-y-3">
+      {(showAllRecent ? recentSongs : recentSongs.slice(0, 5)).map((song) => (
+        <SongCardPublic key={song.id} song={song} />
+      ))}
+    </div>
+
+    {recentSongs.length > 5 && (
+      <button
+        onClick={() => setShowAllRecent(!showAllRecent)}
+        className="text-white/80 text-sm mt-3 underline"
+      >
+        {showAllRecent ? "close" : "…and more"}
+      </button>
+    )}
+  </div>
+)}
+
+        {/* 🎲 ランダム */}
+        {randomResults && (
+          <div className="mt-8 space-y-3">
+            {randomResults.map((song) => (
+              <SongCardPublic key={song.id} song={song} />
+            ))}
+          </div>
+        )}
+
+        {/* 🔍 検索結果 */}
+        {hasSearched && (
+          <div className="mt-8">
+            <div className="text-white/70 text-sm mb-3">
+              検索結果：{filteredSongs.length} 件
+            </div>
+
+            <div className="space-y-3">
+              {pagedSongs.map((song) => (
+                <SongCardPublic key={song.id} song={song} />
               ))}
             </div>
 
-            {/* 最近追加 */}
-            <div className="space-y-2">
-              <h2 className="text-lg font-bold text-white/80">
-                最近追加された曲
-              </h2>
-
-              {(recentExpanded ? recentSongs : recentSongs.slice(0, 5)).map(
-                (song) => (
-                  <div
-                    key={song.id}
-                    className="px-3 py-2 rounded-lg bg-white/10 backdrop-blur-sm text-white/80"
-                  >
-                    {song.title}
-                  </div>
-                )
-              )}
-
-              {!recentExpanded && recentSongs.length > 5 && (
+            {/* ページング */}
+            {totalPages > 1 && (
+              <div className="flex justify-center gap-3 mt-6 text-sm">
                 <button
-                  type="button"
-                  onClick={() => setRecentExpanded(true)}
-                  className="w-full text-right text-white/40 text-[11px] pr-1 select-none hover:text-white/60 transition"
+                  disabled={page === 1}
+                  onClick={() => setPage((p) => p - 1)}
+                  className="px-3 py-1 bg-white/10 rounded disabled:opacity-30"
                 >
-                  and more…
+                  前へ
                 </button>
-              )}
-
-              {recentExpanded && (
+                <div className="text-white/70">
+                  {page} / {totalPages}
+                </div>
                 <button
-                  type="button"
-                  onClick={() => setRecentExpanded(false)}
-                  className="w-full text-right text-white/40 text-[11px] pr-1 mt-1 select-none hover:text-white/60 transition"
+                  disabled={page === totalPages}
+                  onClick={() => setPage((p) => p + 1)}
+                  className="px-3 py-1 bg-white/10 rounded disabled:opacity-30"
                 >
-                  close
+                  次へ
                 </button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
-        </div>
+        )}
       </main>
     </>
   );

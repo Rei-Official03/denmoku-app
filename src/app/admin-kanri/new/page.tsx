@@ -1,74 +1,36 @@
 "use client";
 
-import { Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import EditForm from "@/app/admin-kanri/_components/EditForm";
-import type { Song } from "@/lib/songData";
+import { getNextId } from "@/lib/getNextId";
+
+// diff 読み込み
+const loadDiffs = () => {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem("song_edits_v1");
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+};
+
+// diff 保存
+const saveDiffs = (diffs: any) => {
+  try {
+    localStorage.setItem("song_edits_v1", JSON.stringify(diffs));
+  } catch {}
+};
 
 export default function NewSongPage() {
-  return (
-    <Suspense fallback={null}>
-      <NewSongPageInner />
-    </Suspense>
-  );
-}
-
-function NewSongPageInner() {
-  const params = useSearchParams();
   const router = useRouter();
 
-  const [songs, setSongs] = useState<Song[]>([]);
-
-  useEffect(() => {
-    import("@/lib/songData").then((mod) => {
-      setSongs(mod.songs);
-    });
-  }, []);
-
-  const initialTitle = params.get("title") || "";
-  const initialArtist = params.get("artist") || "";
-
-  const loadDiffs = () => {
-    if (typeof window === "undefined") return {};
-    try {
-      const raw = localStorage.getItem("song_edits_v1");
-      return raw ? JSON.parse(raw) : {};
-    } catch {
-      return {};
-    }
-  };
-
-  const saveDiffs = (obj: any) => {
-    if (typeof window === "undefined") return;
-    try {
-      localStorage.setItem("song_edits_v1", JSON.stringify(obj));
-    } catch {}
-  };
-
-  const getNextId = () => {
-    if (typeof window === "undefined") return 1;
-
-    const maxSongId =
-      songs.length > 0 ? Math.max(...songs.map((s) => s.id)) : 0;
-
-    let maxDiffId = 0;
-    try {
-      const raw = localStorage.getItem("song_edits_v1");
-      const diffs = raw ? JSON.parse(raw) : {};
-      const diffIds = Object.keys(diffs).map((k) => Number(k));
-      maxDiffId = diffIds.length > 0 ? Math.max(...diffIds) : 0;
-    } catch {
-      maxDiffId = 0;
-    }
-
-    return Math.max(maxSongId, maxDiffId) + 1;
-  };
-
+  // 新規曲の初期値
   const initial = {
-    title: initialTitle,
+    title: "",
     titleKana: "",
-    artist: initialArtist,
+    artist: "",
     artistKana: "",
     scale: "",
     genre: "",
@@ -77,11 +39,15 @@ function NewSongPageInner() {
     isPublic: false,
   };
 
+  // ★ ここに handleSave を入れる（ID 採番の完全版）
   const handleSave = (data: any) => {
-    const id = getNextId();
+    const id = getNextId(); // ← ここで新規IDを採番
 
     const diffs = loadDiffs();
-    diffs[id] = { id, ...data };
+
+    // ★ diff の中に id を入れない（重要）
+    diffs[id] = { ...data };
+
     saveDiffs(diffs);
 
     router.push("/admin-kanri");
@@ -89,10 +55,10 @@ function NewSongPageInner() {
 
   return (
     <EditForm
-      id={0}
+      id={0} // 新規曲なので 0（表示用）
       initial={initial}
       onSave={handleSave}
-      titleLabel="新規曲追加"
+      titleLabel="新規曲を追加"
     />
   );
 }

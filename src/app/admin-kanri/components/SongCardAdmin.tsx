@@ -3,39 +3,53 @@
 import { useRouter } from "next/navigation";
 import type { Song } from "@/lib/songData";
 
-type Props = {
-  song: Song | { id: number; title: string; artist: string; isNew: true };
-};
-
-export default function SongCardAdmin({ song }: Props) {
+export default function SongCardAdmin({ song }: { song: Song }) {
   const router = useRouter();
 
-  // これが最も安全で確実
-  const isNewSong = (song as any).isNew === true;
-
   const handleClick = () => {
-    if (isNewSong) {
-      router.push(`/admin-kanri/diff-edit/${song.id}`);
-    } else {
-      router.push(`/admin-kanri/song/${song.id}`);
-    }
+    router.push(`/admin-kanri/song/${song.id}`);
   };
 
   return (
     <div
       onClick={handleClick}
       className="
-        p-4 rounded-xl bg-white/10 backdrop-blur-md
-        border border-white/10 shadow-md text-white
-        cursor-pointer transition
-        hover:bg-white/20 hover:shadow-lg active:scale-[0.98]
+        p-4 rounded-lg bg-white/10 border border-white/20
+        shadow-md cursor-pointer active:scale-95 transition
       "
     >
-      <div className="text-sm font-bold drop-shadow-sm">
-        {song.title}
-        {isNewSong && <span className="ml-2 text-xs text-sky-300">NEW</span>}
+      {/* タイトル */}
+      <div className="flex items-center gap-2">
+        <h2 className="text-lg font-bold">{song.title}</h2>
+
+        {/* NEW バッジ */}
+        {song.isNew && (
+          <span className="px-2 py-0.5 text-xs rounded bg-pink-500 text-white">
+            NEW
+          </span>
+        )}
+
+        {/* diff バッジ */}
+        {song.hasDiff && (
+          <span className="px-2 py-0.5 text-xs rounded bg-yellow-500 text-black">
+            未反映あり
+          </span>
+        )}
       </div>
-      <div className="text-xs text-white/70 mt-0.5">{song.artist}</div>
+
+      {/* アーティスト */}
+      <p className="text-white/70">{song.artist}</p>
+
+      {/* Kana */}
+      <p className="text-white/50 text-sm">
+        {song.titleKana} / {song.artistKana}
+      </p>
+
+      {/* 下部情報 */}
+      <div className="mt-2 flex justify-between text-sm text-white/70">
+        <span>ジャンル: {song.genre}</span>
+        <span>再生: {song.playCount}</span>
+      </div>
     </div>
   );
 }

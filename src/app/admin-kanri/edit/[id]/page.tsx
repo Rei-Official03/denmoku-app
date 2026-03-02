@@ -14,6 +14,7 @@ export default function EditSongPage() {
   const [baseSong, setBaseSong] = useState<Song | null>(null);
   const [loaded, setLoaded] = useState(false);
 
+  // songData 読み込み
   useEffect(() => {
     import("@/lib/songData").then((mod) => {
       setSongs(mod.songs);
@@ -30,26 +31,12 @@ export default function EditSongPage() {
     }
   };
 
+  // baseSong をセット
   useEffect(() => {
-    const diffs = loadDiffs();
-    const diff = diffs[id];
-
     const base = songs.find((s) => s.id === id) || null;
     setBaseSong(base);
-
     setLoaded(true);
   }, [id, songs]);
-
-  const handleSave = (data: any) => {
-    const diffs = loadDiffs();
-    diffs[id] = data;
-
-    try {
-      localStorage.setItem("song_edits_v1", JSON.stringify(diffs));
-    } catch {}
-
-    router.push("/admin-kanri");
-  };
 
   if (!loaded) {
     return (
@@ -72,6 +59,7 @@ export default function EditSongPage() {
   const diffs = loadDiffs();
   const diff = diffs[id] ?? {};
 
+  // 初期値（diff → baseSong の順で上書き）
   const initial = {
     title: diff.title ?? baseSong.title,
     titleKana: diff.titleKana ?? baseSong.titleKana,
@@ -82,6 +70,31 @@ export default function EditSongPage() {
     instUrl: diff.instUrl ?? baseSong.instUrl,
     skillLevel: diff.skillLevel ?? baseSong.skillLevel,
     isPublic: diff.isPublic ?? baseSong.isPublic,
+  };
+
+  // ★ 差分だけ保存する（ここが最重要）
+  const handleSave = (data: any) => {
+    const diffs = loadDiffs();
+
+    const newDiff: Record<string, unknown> = {};
+
+    // baseSong と比較して “変わった項目だけ” diff に入れる
+    for (const key of Object.keys(initial)) {
+      const before = (baseSong as any)[key];
+      const after = data[key];
+
+      if (before !== after) {
+        newDiff[key] = after;
+      }
+    }
+
+    diffs[id] = newDiff;
+
+    try {
+      localStorage.setItem("song_edits_v1", JSON.stringify(diffs));
+    } catch {}
+
+    router.push("/admin-kanri");
   };
 
   return (

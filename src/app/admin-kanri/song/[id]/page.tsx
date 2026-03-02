@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { mergeSongs } from "@/lib/mergeSongs";
 import type { Song } from "@/lib/songData";
 
 export default function SongDetailPage() {
@@ -9,69 +10,10 @@ export default function SongDetailPage() {
   const params = useParams();
   const id = Number(params.id);
 
-  const [songs, setSongs] = useState<Song[]>([]);
   const [song, setSong] = useState<Song | null>(null);
+  const [diffs, setDiffs] = useState<Record<string, any>>({});
 
-  // 曲データ読み込み
-  useEffect(() => {
-    import("@/lib/songData").then((mod) => {
-      setSongs(mod.songs);
-    });
-  }, []);
-
-  // 対象曲をセット
-  useEffect(() => {
-    if (songs.length === 0) return;
-    const s = songs.find((s) => s.id === id) || null;
-    setSong(s);
-  }, [songs, id]);
-
-  // 編集モード
-  const [isEditing, setIsEditing] = useState(false);
-
-  // 再生回数
-  const [playCount, setPlayCount] = useState(0);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const raw = localStorage.getItem(`play_count_${id}`);
-    setPlayCount(raw ? Number(raw) : 0);
-  }, [id]);
-
-  const handlePlay = () => {
-    const newCount = playCount + 1;
-    setPlayCount(newCount);
-
-    if (typeof window !== "undefined") {
-      localStorage.setItem(`play_count_${id}`, String(newCount));
-    }
-  };
-
-  // 編集用 state
-  const [title, setTitle] = useState("");
-  const [titleKana, setTitleKana] = useState("");
-  const [artist, setArtist] = useState("");
-  const [artistKana, setArtistKana] = useState("");
-  const [scale, setScale] = useState("");
-  const [genre, setGenre] = useState("");
-  const [skillLevel, setSkillLevel] = useState("");
-  const [isPublic, setIsPublic] = useState(false);
-
-  // 編集フォームに反映
-  useEffect(() => {
-    if (!song) return;
-
-    setTitle(song.title);
-    setTitleKana(song.titleKana);
-    setArtist(song.artist);
-    setArtistKana(song.artistKana);
-    setScale(song.scale);
-    setGenre(song.genre);
-    setSkillLevel(song.skillLevel);
-    setIsPublic(song.isPublic);
-  }, [song]);
-
-  // 差分保存
+  // diff 読み込み
   const loadDiffs = () => {
     if (typeof window === "undefined") return {};
     try {
@@ -82,28 +24,15 @@ export default function SongDetailPage() {
     }
   };
 
-  const saveDiffs = (obj: any) => {
-    if (typeof window === "undefined") return;
-    try {
-      localStorage.setItem("song_edits_v1", JSON.stringify(obj));
-    } catch {}
-  };
+  // データ読み込み（mergeSongs）
+  useEffect(() => {
+    const d = loadDiffs();
+    setDiffs(d);
 
-  const handleSave = () => {
-    const diffs = loadDiffs();
-    diffs[id] = {
-      title,
-      titleKana,
-      artist,
-      artistKana,
-      scale,
-      genre,
-      skillLevel,
-      isPublic,
-    };
-    saveDiffs(diffs);
-    setIsEditing(false);
-  };
+    const merged = mergeSongs(d);
+    const s = merged.find((s) => s.id === id) || null;
+    setSong(s);
+  }, [id]);
 
   if (!song) {
     return (
@@ -115,42 +44,106 @@ export default function SongDetailPage() {
 
   // 歌うボタン
   const handleSing = () => {
-    handlePlay();
+  const hasUrl =
+    typeof song.instUrl === "string" && song.instUrl.trim() !== "";
 
-    const url =
-      typeof song.instUrl === "string" && song.instUrl.trim() !== ""
-        ? song.instUrl
-        : "https://www.youtube.com/";
+  // URL がある場合 → URL を開くだけ（コピーしない）
+  if (hasUrl) {
+    window.open(song.instUrl, "_blank");
+    return;
+  }
 
-    window.open(url, "_blank");
-    navigator.clipboard.writeText(`${song.title} ${song.artist} カラオケ`);
-  };
+  // URL がない場合 → YouTube ホーム + コピー
+  window.open("https://www.youtube.com/", "_blank");
+  navigator.clipboard.writeText(`${song.title} カラオケ`);
+};
+
+  // Diff の元 → 新 を作る
+  const diff = diffs[id];
+  const diffEntries =
+    diff &&
+    Object.entries(diff).map(([key, newValue]) => {
+      const oldValue = (song as any)[key];
+
+      // 表示用の変換
+      const format = (v: any) => {
+        if (v === true) return "公開";
+        if (v === false) return "非公開";
+        if (v === "" || v === undefined || v === null) return "（なし）";
+        return String(v);
+      };
+
+      return {
+        key,
+        oldValue: format(oldValue),
+        newValue: format(newValue),
+      };
+    });
 
   return (
     <main className="mx-auto max-w-xl px-4 py-6 text-white">
-      <h1 className="text-xl font-bold">{song.title}</h1>
+      {/* タイトル */}
+      <h1 className="text-2xl font-bold">{song.title}</h1>
       <p className="text-white/70">{song.artist}</p>
 
-      {/* 再生回数 */}
-      <p className="mt-2 text-sm text-white/60">
-        再生回数：{playCount}
-      </p>
+      {/* NEW バッジ */}
+      {song.isNew && (
+        <span className="inline-block mt-2 px-2 py-1 text-xs rounded bg-pink-500 text-white">
+          NEW
+        </span>
+      )}
 
-      {/* 🎤 歌うボタン */}
-      <button
-        onClick={handleSing}
-        className="mt-4 w-full py-3 rounded-lg bg-pink-500 text-white font-bold shadow-md active:scale-95 transition"
-      >
-        🎤 歌う
-      </button>
+      {/* 管理情報カード */}
+      <div className="mt-6 p-4 rounded-lg bg-white/10 border border-white/20">
+        <p>ID: {song.id}</p>
+        <p>タイトル（かな）: {song.titleKana || "（なし）"}</p>
+        <p>アーティスト（かな）: {song.artistKana || "（なし）"}</p>
+        <p>ジャンル: {song.genre || "（なし）"}</p>
+        <p>スキル: {song.skillLevel}</p>
+        <p>公開: {song.isPublic ? "公開" : "非公開"}</p>
+        <p>追加日: {song.createdAt}</p>
+        <p>instURL: {song.instUrl || "（なし）"}</p>
+        <p>再生回数: {song.playCount}</p>
+      </div>
 
-      {/* ✏️ 編集ボタン */}
-      <button
-        onClick={() => setIsEditing(true)}
-        className="mt-3 w-full py-3 rounded-lg bg-white/20 text-white font-bold shadow-md active:scale-95 transition"
-      >
-        ✏️ 編集する
-      </button>
+      {/* Diff 表示 */}
+      {diff && (
+        <div className="mt-6 p-4 rounded-lg bg-white/10 border border-pink-400/40">
+          <h2 className="font-bold text-pink-300 mb-2">【未反映の変更】</h2>
+          {diffEntries?.map((d) => (
+            <p key={d.key} className="text-sm">
+              ・{d.key}: {d.oldValue} → {d.newValue}
+            </p>
+          ))}
+        </div>
+      )}
+
+      {/* ボタン群 */}
+      <div className="mt-8 flex gap-3">
+        {/* 戻る */}
+        <button
+          onClick={() => router.push("/admin-kanri")}
+          className="flex-1 py-3 rounded-lg bg-white/10 border border-white/30 text-white font-bold active:scale-95 transition"
+        >
+          ← 戻る
+        </button>
+
+        {/* 編集 */}
+        <button
+          onClick={() => router.push(`/admin-kanri/edit/${song.id}`)}
+          className="flex-1 py-3 rounded-lg bg-blue-500 text-white font-bold active:scale-95 transition"
+        >
+          編集
+        </button>
+
+        {/* 歌う */}
+        <button
+          onClick={handleSing}
+          className="flex-1 py-3 rounded-lg bg-pink-500 text-white font-bold active:scale-95 transition"
+        >
+          歌う
+        </button>
+      </div>
     </main>
   );
 }

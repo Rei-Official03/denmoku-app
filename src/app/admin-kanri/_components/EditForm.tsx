@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type Props = {
   id: number;
@@ -20,6 +20,7 @@ type Props = {
 };
 
 export default function EditForm({ id, initial, onSave, titleLabel }: Props) {
+  // ★ 初期値を state に同期（ID が変わったときも正しく更新）
   const [title, setTitle] = useState(initial.title);
   const [titleKana, setTitleKana] = useState(initial.titleKana);
   const [artist, setArtist] = useState(initial.artist);
@@ -30,6 +31,23 @@ export default function EditForm({ id, initial, onSave, titleLabel }: Props) {
   const [skillLevel, setSkillLevel] = useState(initial.skillLevel);
   const [isPublic, setIsPublic] = useState(initial.isPublic);
 
+  // ★ ID が変わったら初期値を再セット（DiffEditPage の key={id} と二重保険）
+  useEffect(() => {
+    setTitle(initial.title);
+    setTitleKana(initial.titleKana);
+    setArtist(initial.artist);
+    setArtistKana(initial.artistKana);
+    setScale(initial.scale);
+    setGenre(initial.genre);
+    setInstUrl(initial.instUrl);
+    setSkillLevel(initial.skillLevel);
+    setIsPublic(initial.isPublic);
+  }, [id, initial]);
+
+  // ★ skillLevel の空白禁止（" " などを弾く）
+  const validSkill = skillLevel.trim() !== "";
+
+  // ★ 保存ボタンの無効化条件
   const disabled =
     !title.trim() ||
     !artist.trim() ||
@@ -37,19 +55,20 @@ export default function EditForm({ id, initial, onSave, titleLabel }: Props) {
     !artistKana.trim() ||
     !scale.trim() ||
     !genre.trim() ||
-    !skillLevel;
+    !validSkill;
 
+  // ★ 保存（型ゆらぎ対策：boolean / string を正しく渡す）
   const handleSave = () => {
     onSave({
-      title,
-      titleKana,
-      artist,
-      artistKana,
-      scale,
-      genre,
-      instUrl,
-      skillLevel,
-      isPublic,
+      title: title.trim(),
+      titleKana: titleKana.trim(),
+      artist: artist.trim(),
+      artistKana: artistKana.trim(),
+      scale: scale.trim(),
+      genre: genre.trim(),
+      instUrl: instUrl.trim(),
+      skillLevel: skillLevel.trim(),
+      isPublic: Boolean(isPublic),
     });
   };
 
@@ -102,7 +121,6 @@ export default function EditForm({ id, initial, onSave, titleLabel }: Props) {
           className="w-full px-3 py-2 rounded-lg bg-white/20 placeholder-white/50"
         />
 
-        {/* instUrl */}
         <input
           value={instUrl}
           onChange={(e) => setInstUrl(e.target.value)}
@@ -110,7 +128,7 @@ export default function EditForm({ id, initial, onSave, titleLabel }: Props) {
           className="w-full px-3 py-2 rounded-lg bg-white/20 placeholder-white/50"
         />
 
-        {/* ★ スキルレベル（Cosmic Lounge デザイン統一版） */}
+        {/* skillLevel */}
         <select
           value={skillLevel}
           onChange={(e) => setSkillLevel(e.target.value)}
@@ -147,23 +165,23 @@ export default function EditForm({ id, initial, onSave, titleLabel }: Props) {
         </label>
 
         <button
-  disabled={disabled}
-  onClick={handleSave}
-  className={`
-    w-full py-2 rounded-lg font-bold transition
-    ${
-      disabled
-        ? "bg-sky-400/20 text-white/40 cursor-not-allowed"
-        : `
-          bg-gradient-to-l from-sky-400 via-sky-300 to-sky-200
-          hover:from-sky-500 hover:via-sky-400 hover:to-sky-300
-          text-white shadow-sm hover:shadow
-        `
-    }
-  `}
->
-  保存する
-</button>
+          disabled={disabled}
+          onClick={handleSave}
+          className={`
+            w-full py-2 rounded-lg font-bold transition
+            ${
+              disabled
+                ? "bg-sky-400/20 text-white/40 cursor-not-allowed"
+                : `
+                  bg-gradient-to-l from-sky-400 via-sky-300 to-sky-200
+                  hover:from-sky-500 hover:via-sky-400 hover:to-sky-300
+                  text-white shadow-sm hover:shadow
+                `
+            }
+          `}
+        >
+          保存する
+        </button>
       </div>
     </main>
   );

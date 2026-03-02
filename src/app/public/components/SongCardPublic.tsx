@@ -85,7 +85,7 @@ export default function SongCardPublic({ song, onSelect, isNew }: Props) {
 
           {/* ジャンル ＋ スキルレベルバッジ */}
           <div className="flex justify-between items-center text-xs">
-            <span className="text-white/80">🎵 {song.genre}</span>
+            <span className="text-white/80">♪ {song.genre}</span>
 
             {song.skillLevel === "◎" && (
               <SkillBadge color="bg-green-400/40" icon="◎" text="気持ちよく歌っちゃう曲" />

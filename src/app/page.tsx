@@ -31,14 +31,12 @@ export default function Home() {
               bg-gradient-to-r from-white via-[#AEEBFF] to-[#F7B2C4]
               bg-clip-text text-transparent
               drop-shadow-lg tracking-wide
+              mb-12
             "
           >
             SongList ✦
           </h1>
 
-          <p className="text-sm text-white/80 font-medium">
-            🌟 あたしの星空デンモク 🌟
-          </p>
 
           <p className="text-xs text-white/70 leading-relaxed">
             曲名・アーティストで今すぐ検索✨<br />

@@ -2,16 +2,13 @@
 
 import { useEffect, useState, useCallback } from "react";
 import DiffCard from "./DiffCard";
-import { songs } from "@/lib/songData";
 
 type DiffMap = Record<string, Record<string, unknown>>;
 
 export default function DiffList() {
   const [diffs, setDiffs] = useState<DiffMap>({});
 
-  // -----------------------------
-  // SSR 安全な localStorage load
-  // -----------------------------
+  // localStorage 読み込み
   const reload = useCallback(() => {
     if (typeof window === "undefined") return;
 
@@ -38,9 +35,7 @@ export default function DiffList() {
     );
   }
 
-  // -----------------------------
   // 全削除
-  // -----------------------------
   const clearAll = () => {
     const ok = confirm(
       "すべての差分を削除しますか？\n(songData.ts に反映済みの場合のみ実行してください)"
@@ -78,9 +73,9 @@ export default function DiffList() {
         {ids.map((id) => (
           <DiffCard
             key={id}
-            id={Number(id)}     // ← diff の ID を渡す（正しい）
-            patch={diffs[id]}
-            onCleared={reload}
+            id={Number(id)}
+            patch={diffs[id]}   // ← diff の中身を正しく渡す
+            onCleared={reload}  // ← 削除後に再読み込み
           />
         ))}
       </div>

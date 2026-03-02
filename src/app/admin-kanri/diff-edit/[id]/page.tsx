@@ -14,13 +14,14 @@ export default function DiffEditPage() {
   const [loaded, setLoaded] = useState(false);
   const [initial, setInitial] = useState<any>(null);
 
-  // ① songData を読み込む
+  // songData を読み込む
   useEffect(() => {
     import("@/lib/songData").then((mod) => {
       setSongs(mod.songs);
     });
   }, []);
 
+  // localStorage 読み込み
   const loadDiffs = () => {
     if (typeof window === "undefined") return {};
     try {
@@ -31,9 +32,9 @@ export default function DiffEditPage() {
     }
   };
 
-  // ② songs が読み込まれてから initial を作る
+  // initial を作る
   useEffect(() => {
-    if (songs.length === 0) return; // ← songs が来るまで待つ
+    if (songs.length === 0) return;
 
     const diffs = loadDiffs();
     const diff = diffs[id] ?? {};
@@ -71,11 +72,28 @@ export default function DiffEditPage() {
     setLoaded(true);
   }, [id, songs]);
 
+  // ★ 差分だけ保存する（最重要）
   const handleSave = (data: any) => {
     const diffs = loadDiffs();
 
-    const { id: _, ...rest } = data;
-    diffs[id] = rest;
+    const baseSong = songs.find((s) => s.id === id) || null;
+    const newDiff: Record<string, unknown> = {};
+
+    // baseSong がある場合 → baseSong と比較して差分だけ保存
+    if (baseSong) {
+      for (const key of Object.keys(initial)) {
+        const before = (baseSong as any)[key];
+        const after = data[key];
+        if (before !== after) {
+          newDiff[key] = after;
+        }
+      }
+    } else {
+      // 新規曲の場合 → 全項目保存（diff-edit でも新規曲はあり得る）
+      Object.assign(newDiff, data);
+    }
+
+    diffs[id] = newDiff;
 
     try {
       localStorage.setItem("song_edits_v1", JSON.stringify(diffs));
