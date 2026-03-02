@@ -4,8 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import AdminSearchBar from "./components/AdminSearchBar";
-import SongCardAdmin from "./components/SongCardAdmin";
-import RequestList from "./components/RequestList";
+import SongCardAdmin from "@/app/admin-kanri/components/SongCardAdmin";import RequestList from "./components/RequestList";
 import DiffList from "./components/DiffList";
 import CosmicBackgroundAdmin from "@/components/CosmicBackgroundAdmin";
 

@@ -948,7 +948,7 @@ export const songs: Song[] = [
     artist: "Eight",
     artistKana: "えいと",
     genre: "ボカロ",
-    scale: "C♯",
+    scale: "Gs♯",
     instUrl: "https://youtu.be/HujWpOq2_vM",
     skillLevel: "△",
     isPublic: true,
@@ -1330,6 +1330,19 @@ export const songs: Song[] = [
     skillLevel: "◎",
     isPublic: true,
     createdAt: "2026-02-25",
+  },
+  {
+    id: 102,
+    title: "おじゃま虫",
+    titleKana: "おじゃまむし",
+    artist: "DECO*27",
+    artistKana: "でこにーな",
+    scale: "B",
+    genre: "ボカロ",
+    instUrl: "https://youtu.be/Oonb3fCCgGQ?si=lA_wUNiYRSKG1rXM",
+    skillLevel: "◎",
+    isPublic: true,
+    createdAt: "2026-03-02",
   },
   // ★ここにどんどん追加していく（titleKana / artistKana / scale / genre / playCount 必須）
 ];

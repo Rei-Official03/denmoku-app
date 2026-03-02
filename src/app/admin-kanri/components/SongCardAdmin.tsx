@@ -10,7 +10,7 @@ type Props = {
 export default function SongCardAdmin({ song }: Props) {
   const router = useRouter();
 
-  // isNew が true のときだけ新規曲扱い
+  // これが最も安全で確実
   const isNewSong = (song as any).isNew === true;
 
   const handleClick = () => {
