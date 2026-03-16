@@ -63,27 +63,27 @@ export default function PublicPage() {
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => setHydrated(true), []);
 
-// mergeSongs（diff + 新規曲 + playCount）
-const mergedSongs = useMemo(() => {
-  const diffs = loadDiffs();
-  return mergeSongs(diffs);
-}, []);
+  // mergeSongs（diff + 新規曲 + playCount）
+  const mergedSongs = useMemo(() => {
+    const diffs = loadDiffs();
+    return mergeSongs(diffs);
+  }, []);
 
-// クリア
-const handleClearResults = () => {
-  setKeyword("");
-  setMode("all");
-  setGenre("");
+  // クリア
+  const handleClearResults = () => {
+    setKeyword("");
+    setMode("all");
+    setGenre("");
 
-  // 検索状態もリセット
-  setSearchKeyword("");
-  setSearchMode("all");
-  setSearchGenre("");
+    // 検索状態もリセット
+    setSearchKeyword("");
+    setSearchMode("all");
+    setSearchGenre("");
 
-  setHasSearched(false);
-  setRandomResults(null);
-  setPage(1);
-};
+    setHasSearched(false);
+    setRandomResults(null);
+    setPage(1);
+  };
 
   // ジャンル一覧
   const genres = useMemo(() => {
@@ -136,11 +136,30 @@ const handleClearResults = () => {
     setRandomResults(null);
   };
 
-  // ランダム実行
+  // ランダム実行（ジャンル対応＋最後のやつも反映）
   const handleRandom = () => {
-    const results = pickRandomPublicSongs(mergedSongs);
-    setRandomResults(results);
+    // 公開曲だけ
+    let pool = mergedSongs.filter((s) => s.isPublic);
+
+    // ジャンル指定があれば絞る
+    if (genre) {
+      pool = pool.filter((s) => s.genre === genre);
+    }
+
+    // シャッフル
+    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+
+    // 3曲だけ選ぶ
+    const selected = shuffled.slice(0, 3);
+
+    // 検索状態もランダム用に更新
+    setSearchKeyword("");
+    setSearchMode("all");
+    setSearchGenre(genre);
+
+    setRandomResults(selected);
     setHasSearched(false);
+    setPage(1);
   };
 
   // 検索結果
@@ -173,8 +192,8 @@ const handleClearResults = () => {
           bg-transparent
         "
       >
-<div className="sticky top-0 z-20 pb-4 bg-transparent">
-        <h1
+        <div className="sticky top-0 z-20 pb-4 bg-transparent">
+          <h1
             className="
               text-4xl font-extrabold
               bg-gradient-to-r from-white via-[#7C8CFF] to-[#0F1A3A]
@@ -182,99 +201,101 @@ const handleClearResults = () => {
               drop-shadow-xl tracking-wide
               mb-6
             "
-          ><center>
-            SongList ✦
-          </center></h1>
+          >
+            <center>SongList ✦</center>
+          </h1>
 
+          <PublicSearchBar
+            keyword={keyword}
+            setKeyword={setKeyword}
+            mode={mode}
+            setMode={setMode}
+            genre={genre}
+            setGenre={setGenre}
+            genres={genres}
+            onSearch={handleSearch}
+            onRandom={handleRandom}
+            onClearResults={handleClearResults}
+          />
 
-        <PublicSearchBar
-          keyword={keyword}
-          setKeyword={setKeyword}
-          mode={mode}
-          setMode={setMode}
-          genre={genre}
-          setGenre={setGenre}
-          genres={genres}
-          onSearch={handleSearch}
-          onRandom={handleRandom}
-          onClearResults={handleClearResults}
-        />
+          {/* 🔍 検索前の説明エリア */}
+          {!hasSearched && !randomResults && (
+            <div
+              className="
+                mt-10 p-4 rounded-xl
+                bg-white/10 text-white
+                backdrop-blur-sm
+                border border-white/20
+                shadow-lg shadow-black/30
+                text-center text-md
+                font-bold
+              "
+            >
+              検索するとここに結果が表示されます
+            </div>
+          )}
 
-        {/* 🔍 検索前の説明エリア */}
-        {!hasSearched && !randomResults && (
-  <div
-    className="
-      mt-10 p-4 rounded-xl
-      bg-white/10 text-white
-      backdrop-blur-sm
-      border border-white/20
-      shadow-lg shadow-black/30
-      text-center text-md
-      font-bold
-    "
-  >
-    検索するとここに結果が表示されます
-  </div>
-)}
-
-        {/* ダブルタップ説明 */}
-        <div className="mt-4 text-lg text-white font-bold text-center drop-shadow-[0_0_6px_#0F1A3A]">
-          📌 リクエスト曲はカードをダブルタップでコピーできます
-        </div>
-</div>
-        {/* ⭐ 人気ランキング（1枚のカード） */}
-{!hasSearched && !randomResults && (
-  <div
-    className="
-      mt-10 p-4 rounded-xl
-      bg-white/10 text-white
-      backdrop-blur-sm
-    "
-  >
-    <h2 className="text-2xl font-bold mb-4 tracking-wide"><center>
-🏆人気ランキング🏆
-　　</center></h2>
-
-    <div className="space-y-4">
-      {ranking.slice(0, 5).map((song, index) => (
-        <div key={song.id}>
-          {/* ○位 + 曲名 / アーティスト名 */}
-          <div className="font-bold">
-            {index + 1}位 {song.title} / {song.artist}
+          {/* ダブルタップ説明 */}
+          <div className="mt-4 text-lg text-white font-bold text-center drop-shadow-[0_0_6px_#0F1A3A]">
+            📌 リクエスト曲はカードをダブルタップでコピーできます
           </div>
-
-          {/* ♪ジャンル　　○回 */}
-          <div className="flex justify-between text-base text-white/90 mt-1">
-  <span>♪ {song.genre}</span>
-  <span>{song.playCount} 回</span>
-</div>
         </div>
-      ))}
-    </div>
-  </div>
-)}
+
+        {/* ⭐ 人気ランキング（1枚のカード） */}
+        {!hasSearched && !randomResults && (
+          <div
+            className="
+              mt-10 p-4 rounded-xl
+              bg-white/10 text-white
+              backdrop-blur-sm
+            "
+          >
+            <h2 className="text-2xl font-bold mb-4 tracking-wide">
+              <center>🏆人気ランキング🏆　　</center>
+            </h2>
+
+            <div className="space-y-4">
+              {ranking.slice(0, 5).map((song, index) => (
+                <div key={song.id}>
+                  {/* ○位 + 曲名 / アーティスト名 */}
+                  <div className="font-bold">
+                    {index + 1}位 {song.title} / {song.artist}
+                  </div>
+
+                  {/* ♪ジャンル　　○回 */}
+                  <div className="flex justify-between text-base text-white/90 mt-1">
+                    <span>♪ {song.genre}</span>
+                    <span>{song.playCount} 回</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* 🆕 最近追加された曲（5件＋and more） */}
-{!hasSearched && !randomResults && (
-  <div className="mt-10">
-    <h2 className="text-lg font-bold mb-3">最近追加された曲</h2>
+        {!hasSearched && !randomResults && (
+          <div className="mt-10">
+            <h2 className="text-lg font-bold mb-3">最近追加された曲</h2>
 
-    <div className="space-y-3">
-      {(showAllRecent ? recentSongs : recentSongs.slice(0, 5)).map((song) => (
-        <SongCardPublic key={song.id} song={song} />
-      ))}
-    </div>
+            <div className="space-y-3">
+              {(showAllRecent ? recentSongs : recentSongs.slice(0, 5)).map(
+                (song) => (
+                  <SongCardPublic key={song.id} song={song} />
+                )
+              )}
+            </div>
 
-    {recentSongs.length > 5 && (
-      <button
-        onClick={() => setShowAllRecent(!showAllRecent)}
-        className="text-white/80 text-sm mt-3 underline"
-      >
-        {showAllRecent ? "close" : "…and more"}
-      </button>
-    )}
-  </div>
-)}
+            {recentSongs.length > 5 && (
+              <button
+                onClick={() => setShowAllRecent(!showAllRecent)}
+                className="text-white/80 text-sm mt-3 underline"
+              >
+                {showAllRecent ? "close" : "…and more"}
+              </button>
+            )}
+          </div>
+        )}
 
         {/* 🎲 ランダム */}
         {randomResults && (

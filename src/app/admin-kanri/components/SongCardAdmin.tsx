@@ -18,34 +18,15 @@ export default function SongCardAdmin({ song }: { song: Song }) {
         shadow-md cursor-pointer active:scale-95 transition
       "
     >
-      {/* タイトル */}
-      <div className="flex items-center gap-2">
-        <h2 className="text-lg font-bold">{song.title}</h2>
-
-        {/* NEW バッジ */}
-        {song.isNew && (
-          <span className="px-2 py-0.5 text-xs rounded bg-pink-500 text-white">
-            NEW
-          </span>
-        )}
-
-        {/* diff バッジ */}
-        {song.hasDiff && (
-          <span className="px-2 py-0.5 text-xs rounded bg-yellow-500 text-black">
-            未反映あり
-          </span>
-        )}
+      {/* 上段：タイトル / アーティスト名 + スケール */}
+      <div className="flex justify-between items-center">
+        <div className="font-bold">
+          {song.title} / {song.artist}
+        </div>
+        <div className="text-white/70 text-sm">{song.scale}</div>
       </div>
 
-      {/* アーティスト */}
-      <p className="text-white/70">{song.artist}</p>
-
-      {/* Kana */}
-      <p className="text-white/50 text-sm">
-        {song.titleKana} / {song.artistKana}
-      </p>
-
-      {/* 下部情報 */}
+      {/* 下段：ジャンル + 再生回数 */}
       <div className="mt-2 flex justify-between text-sm text-white/70">
         <span>ジャンル: {song.genre}</span>
         <span>再生: {song.playCount}</span>

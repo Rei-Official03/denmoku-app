@@ -34,55 +34,60 @@ export default function AdminPage() {
   const router = useRouter();
 
   const [keyword, setKeyword] = useState("");
+  const [mode, setMode] = useState("name"); // ID / 名前
   const [searchKeyword, setSearchKeyword] = useState("");
 
   const [randomResults, setRandomResults] = useState(null);
 
   // SSR → CSR 切り替え
   const [hydrated, setHydrated] = useState(false);
-  useEffect(() => {
-    setHydrated(true);
-  }, []);
+  useEffect(() => setHydrated(true), []);
 
+  // 🔍 検索ボタン
   const handleSearch = () => {
-    setSearchKeyword(keyword);
-    setRandomResults(null); // ← ランダム結果を消す
+    setSearchKeyword(keyword); // ← 検索ボタンを押した時だけ検索状態にする
+    setRandomResults(null);
   };
 
+  // 🎲 ランダムボタン
   const handleRandom = () => {
     const results = pickRandomAdminSongs(mergedSongs);
     setRandomResults(results);
     setSearchKeyword(""); // ← 検索結果を消す
   };
 
-  // ★ mergeSongs の結果を一覧に使う（playCount も統合済み）
+  // ⭐ ラジオボタン切り替え時に検索状態をリセット（今回の本命）
+  const handleModeChange = (newMode: string) => {
+    setMode(newMode);
+    setSearchKeyword("");   // ← 検索結果を消す
+    setRandomResults(null); // ← ランダムも消す
+  };
+
+  // mergeSongs（diff + 新規曲 + playCount）
   const mergedSongs = useMemo(() => {
     const diffs = loadDiffs();
     return mergeSongs(diffs);
   }, []);
 
-  // ★ 検索結果
+  // 🔍 検索結果
   const sortedSongs = useMemo(() => {
     const q = searchKeyword.trim();
-    if (!q) return [];
+    if (q === "") return []; // ← 空なら検索しない
 
-    // ID 完全一致
-    const idMatch = mergedSongs.find((song) => song.id.toString() === q);
-    if (idMatch) {
-      return [idMatch];
+    // ID検索
+    if (mode === "id") {
+      const idMatch = mergedSongs.find((song) => song.id.toString() === q);
+      return idMatch ? [idMatch] : [];
     }
 
-    // 通常検索
+    // 名前検索（曲名＋アーティスト名まとめて）
     const filtered = searchSongs(mergedSongs, q, "all");
 
-    // playCount → titleKana の順でソート
     return filtered.sort((a, b) => {
-      if (b.playCount !== a.playCount) {
-        return b.playCount - a.playCount;
-      }
+      if (b.playCount !== a.playCount) return b.playCount - a.playCount;
       return a.titleKana.localeCompare(b.titleKana);
     });
-  }, [searchKeyword, mergedSongs]);
+  }, [searchKeyword, mergedSongs, mode]);
 
   if (!hydrated) return null;
 
@@ -104,9 +109,17 @@ export default function AdminPage() {
         <AdminSearchBar
           keyword={keyword}
           setKeyword={setKeyword}
+          mode={mode}
+          setMode={handleModeChange}
           onSearch={handleSearch}
           onAdd={() => router.push("/admin-kanri/new")}
-        />
+          onRandom={handleRandom}
+          onClear={() => {
+          setKeyword("");
+          setSearchKeyword("");
+          setRandomResults(null);
+          }}
+         />
 
         {/* ランダムボタン */}
         <button
@@ -135,8 +148,8 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* 検索結果 */}
-        {searchKeyword && (
+        {/* 検索結果（検索ボタンを押した時だけ表示） */}
+        {searchKeyword !== "" && (
           <div className="mb-10">
             <div className="text-white/70 text-sm mb-3">
               検索結果：{sortedSongs.length} 件
@@ -150,10 +163,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* リクエスト一覧 */}
         <RequestList />
-
-        {/* Diff 一覧 */}
         <DiffList />
       </main>
     </>

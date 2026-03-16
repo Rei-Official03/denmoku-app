@@ -5,7 +5,7 @@ import type { Song } from "@/lib/songData";
 
 type Props = {
   song: Song;
-  onSelect: (song: Song) => void;
+  onSelect?: (song: Song) => void;   // ← optional
   isNew?: boolean;
 };
 
@@ -30,7 +30,7 @@ export default function SongCardPublic({ song, onSelect, isNew }: Props) {
       copyInfo();
       return;
     }
-    onSelect(song);
+    if (onSelect) onSelect(song);   // ← 安全に呼ぶ
   };
 
   // iPhone：ダブルタップでコピー
@@ -38,7 +38,6 @@ export default function SongCardPublic({ song, onSelect, isNew }: Props) {
     const now = Date.now();
 
     if (now - lastTap < 300) {
-      // ダブルタップ判定
       copyInfo();
     }
 
@@ -64,7 +63,7 @@ export default function SongCardPublic({ song, onSelect, isNew }: Props) {
       {/* カード本体 */}
       <button
         onClick={handleClick}
-        onTouchStart={handleDoubleTap}  // ← ダブルタップ判定
+        onTouchStart={handleDoubleTap}
         className="
           w-full text-left rounded-xl p-4
           bg-gradient-to-r from-white/30 to-white/10
@@ -108,7 +107,7 @@ export default function SongCardPublic({ song, onSelect, isNew }: Props) {
             px-4 py-2 rounded-full text-xs text-white
             bg-white/20 backdrop-blur-md shadow-lg
             animate-toast
-	    z-[9999]
+            z-[9999]
           "
         >
           コピーしたよ！そのままお便りBOXに貼ってね！
