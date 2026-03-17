@@ -25,7 +25,7 @@ const loadDiffs = () => {
 };
 
 // ◎ から 5 曲ランダム（管理側）
-const pickRandomAdminSongs = (songs) => {
+const pickRandomAdminSongs = (songs: Song[]): Song[] => {
   const good = songs.filter((s) => s.skillLevel === "◎");
   const shuffled = [...good].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, 5);
@@ -35,14 +35,20 @@ export default function AdminPage() {
   const router = useRouter();
 
   const [keyword, setKeyword] = useState("");
-  const [mode, setMode] = useState("name"); // ID / 名前
+  const [mode, setMode] = useState<"id" | "name">("name"); // ID / 名前
   const [searchKeyword, setSearchKeyword] = useState("");
 
-  const [randomResults, setRandomResults] = useState(null);
+  const [randomResults, setRandomResults] = useState<Song[] | null>(null);
 
   // SSR → CSR 切り替え
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => setHydrated(true), []);
+
+  // mergeSongs（diff + 新規曲 + playCount）
+  const mergedSongs: Song[] = useMemo(() => {
+    const diffs = loadDiffs();
+    return mergeSongs(diffs);
+  }, []);
 
   // 🔍 検索ボタン
   const handleSearch = () => {
@@ -57,21 +63,15 @@ export default function AdminPage() {
     setSearchKeyword(""); // ← 検索結果を消す
   };
 
-  // ⭐ ラジオボタン切り替え時に検索状態をリセット（今回の本命）
-  const handleModeChange = (newMode: string) => {
+  // ⭐ ラジオボタン切り替え時に検索状態をリセット
+  const handleModeChange = (newMode: "id" | "name") => {
     setMode(newMode);
-    setSearchKeyword("");   // ← 検索結果を消す
-    setRandomResults(null); // ← ランダムも消す
+    setSearchKeyword("");
+    setRandomResults(null);
   };
 
-  // mergeSongs（diff + 新規曲 + playCount）
-  const mergedSongs = useMemo(() => {
-    const diffs = loadDiffs();
-    return mergeSongs(diffs);
-  }, []);
-
   // 🔍 検索結果
-  const sortedSongs = useMemo(() => {
+  const sortedSongs: Song[] = useMemo(() => {
     const q = searchKeyword.trim();
     if (q === "") return []; // ← 空なら検索しない
 
@@ -116,12 +116,11 @@ export default function AdminPage() {
           onAdd={() => router.push("/admin-kanri/new")}
           onRandom={handleRandom}
           onClear={() => {
-          setKeyword("");
-          setSearchKeyword("");
-          setRandomResults(null);
+            setKeyword("");
+            setSearchKeyword("");
+            setRandomResults(null);
           }}
-         />
-
+        />
 
         {/* ランダム結果 */}
         {randomResults && (
