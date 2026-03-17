@@ -9,6 +9,7 @@ import RequestList from "./components/RequestList";
 import DiffList from "./components/DiffList";
 import CosmicBackgroundAdmin from "@/components/CosmicBackgroundAdmin";
 
+import type { Song } from "@/lib/songData";
 import { searchSongs } from "@/lib/searchUtils";
 import { mergeSongs } from "@/lib/mergeSongs";
 
