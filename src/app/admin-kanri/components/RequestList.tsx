@@ -21,7 +21,7 @@ export default function RequestList() {
   // -----------------------------
   const load = async () => {
     const { data, error } = await supabase
-      .from("requests")
+      .from("request") // ← 修正（単数）
       .select("*")
       .order("created_at", { ascending: false });
 
@@ -40,13 +40,13 @@ export default function RequestList() {
   // -----------------------------
   useEffect(() => {
     const channel = supabase
-      .channel("requests-realtime")
+      .channel("request-realtime") // ← 任意の名前でOK
       .on(
         "postgres_changes",
         {
-          event: "*", // insert / update / delete 全部
+          event: "*",
           schema: "public",
-          table: "requests",
+          table: "request", // ← 修正（単数）
         },
         () => {
           load(); // 変更があったら即リロード

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import PublicSearchBar from "./components/PublicSearchBar";
 import SongCardPublic from "./components/SongCardPublic";
 import CosmicBackgroundPublic from "@/components/CosmicBackgroundPublic";
+import RequestBox from "./components/RequestBox";
 
 import { searchSongs } from "@/lib/searchUtils";
 import { mergeSongs } from "@/lib/mergeSongs";
@@ -19,28 +20,6 @@ const loadDiffs = () => {
   } catch {
     return {};
   }
-};
-
-// 公開側ランダム（◎ / ○ / △）
-const pickRandomPublicSongs = (songs) => {
-  const publicSongs = songs.filter((s) => s.isPublic);
-
-  const good = publicSongs.filter((s) => s.skillLevel === "◎");
-  const ok = publicSongs.filter((s) => s.skillLevel === "○");
-  const weak = publicSongs.filter((s) => s.skillLevel === "△");
-
-  const pick = (arr) =>
-    arr.length > 0 ? arr[Math.floor(Math.random() * arr.length)] : null;
-
-  let a = pick(good);
-  let b = pick(ok);
-  let c = pick(weak);
-
-  if (!a) a = pick(ok) || pick(weak);
-  if (!b) b = pick(good) || pick(weak);
-  if (!c) c = pick(good) || pick(ok);
-
-  return [a, b, c].filter(Boolean);
 };
 
 export default function PublicPage() {
@@ -59,11 +38,10 @@ export default function PublicPage() {
 
   const [randomResults, setRandomResults] = useState(null);
 
-  // SSR → CSR 切り替え
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => setHydrated(true), []);
 
-  // mergeSongs（diff + 新規曲 + playCount）
+  // mergeSongs
   const mergedSongs = useMemo(() => {
     const diffs = loadDiffs();
     return mergeSongs(diffs);
@@ -75,7 +53,6 @@ export default function PublicPage() {
     setMode("all");
     setGenre("");
 
-    // 検索状態もリセット
     setSearchKeyword("");
     setSearchMode("all");
     setSearchGenre("");
@@ -92,7 +69,7 @@ export default function PublicPage() {
     return Array.from(set);
   }, [mergedSongs]);
 
-  // ⭐ 人気ランキング（playCount順）
+  // 人気ランキング
   const [ranking, setRanking] = useState([]);
   useEffect(() => {
     const ranked = mergedSongs
@@ -111,7 +88,7 @@ export default function PublicPage() {
     setRanking(ranked);
   }, [mergedSongs]);
 
-  // 🆕 最近追加された曲（createdAt の新しい順）
+  // 最近追加
   const [recentSongs, setRecentSongs] = useState([]);
   const [showAllRecent, setShowAllRecent] = useState(false);
   useEffect(() => {
@@ -126,33 +103,28 @@ export default function PublicPage() {
     setRecentSongs(sorted);
   }, [mergedSongs]);
 
-  // 検索実行
+  // ⭐ 検索実行（最適化）
   const handleSearch = () => {
-    setSearchKeyword(keyword);
+    setSearchKeyword(keyword.trim());
     setSearchMode(mode);
     setSearchGenre(genre);
+
     setHasSearched(true);
-    setPage(1);
     setRandomResults(null);
+    setPage(1);
   };
 
-  // ランダム実行（ジャンル対応＋最後のやつも反映）
+  // ランダム
   const handleRandom = () => {
-    // 公開曲だけ
     let pool = mergedSongs.filter((s) => s.isPublic);
 
-    // ジャンル指定があれば絞る
     if (genre) {
       pool = pool.filter((s) => s.genre === genre);
     }
 
-    // シャッフル
     const shuffled = [...pool].sort(() => Math.random() - 0.5);
-
-    // 3曲だけ選ぶ
     const selected = shuffled.slice(0, 3);
 
-    // 検索状態もランダム用に更新
     setSearchKeyword("");
     setSearchMode("all");
     setSearchGenre(genre);
@@ -162,18 +134,19 @@ export default function PublicPage() {
     setPage(1);
   };
 
-  // 検索結果
+  // ⭐ 検索結果（hasSearched に依存しない）
   const filteredSongs = useMemo(() => {
-    if (!hasSearched) return [];
-
     const q = searchKeyword.trim();
+
+    if (q === "" && searchGenre === "") return [];
+
     const result = searchSongs(mergedSongs, q, searchMode);
 
     const genreFiltered =
       searchGenre === "" ? result : result.filter((s) => s.genre === searchGenre);
 
     return genreFiltered.filter((s) => s.isPublic);
-  }, [hasSearched, searchKeyword, searchMode, searchGenre, mergedSongs]);
+  }, [searchKeyword, searchMode, searchGenre, mergedSongs]);
 
   // ページング
   const pageSize = 10;
@@ -186,12 +159,7 @@ export default function PublicPage() {
     <>
       <CosmicBackgroundPublic />
 
-      <main
-        className="
-          mx-auto max-w-xl px-4 py-6 text-white
-          bg-transparent
-        "
-      >
+      <main className="mx-auto max-w-xl px-4 py-6 text-white bg-transparent">
         <div className="sticky top-0 z-20 pb-4 bg-transparent">
           <h1
             className="
@@ -218,7 +186,6 @@ export default function PublicPage() {
             onClearResults={handleClearResults}
           />
 
-          {/* 🔍 検索前の説明エリア */}
           {!hasSearched && !randomResults && (
             <div
               className="
@@ -235,13 +202,12 @@ export default function PublicPage() {
             </div>
           )}
 
-          {/* ダブルタップ説明 */}
           <div className="mt-4 text-lg text-white font-bold text-center drop-shadow-[0_0_6px_#0F1A3A]">
             📌 リクエスト曲はカードをダブルタップでコピーできます
           </div>
         </div>
 
-        {/* ⭐ 人気ランキング（1枚のカード） */}
+        {/* 人気ランキング */}
         {!hasSearched && !randomResults && (
           <div
             className="
@@ -251,18 +217,16 @@ export default function PublicPage() {
             "
           >
             <h2 className="text-2xl font-bold mb-4 tracking-wide">
-              <center>🏆人気ランキング🏆　　</center>
+              <center>🏆人気ランキング🏆</center>
             </h2>
 
             <div className="space-y-4">
               {ranking.slice(0, 5).map((song, index) => (
                 <div key={song.id}>
-                  {/* ○位 + 曲名 / アーティスト名 */}
                   <div className="font-bold">
                     {index + 1}位 {song.title} / {song.artist}
                   </div>
 
-                  {/* ♪ジャンル　　○回 */}
                   <div className="flex justify-between text-base text-white/90 mt-1">
                     <span>♪ {song.genre}</span>
                     <span>{song.playCount} 回</span>
@@ -273,7 +237,7 @@ export default function PublicPage() {
           </div>
         )}
 
-        {/* 🆕 最近追加された曲（5件＋and more） */}
+        {/* 最近追加 */}
         {!hasSearched && !randomResults && (
           <div className="mt-10">
             <h2 className="text-lg font-bold mb-3">最近追加された曲</h2>
@@ -297,7 +261,7 @@ export default function PublicPage() {
           </div>
         )}
 
-        {/* 🎲 ランダム */}
+        {/* ランダム */}
         {randomResults && (
           <div className="mt-8 space-y-3">
             {randomResults.map((song) => (
@@ -306,12 +270,19 @@ export default function PublicPage() {
           </div>
         )}
 
-        {/* 🔍 検索結果 */}
+        {/* 検索結果 */}
         {hasSearched && (
           <div className="mt-8">
             <div className="text-white/70 text-sm mb-3">
               検索結果：{filteredSongs.length} 件
             </div>
+
+            {/* 🔥 0 件 → RequestBox */}
+            {filteredSongs.length === 0 && !randomResults && (
+              <div className="mt-10">
+                <RequestBox />
+              </div>
+            )}
 
             <div className="space-y-3">
               {pagedSongs.map((song) => (
@@ -319,7 +290,6 @@ export default function PublicPage() {
               ))}
             </div>
 
-            {/* ページング */}
             {totalPages > 1 && (
               <div className="flex justify-center gap-3 mt-6 text-sm">
                 <button

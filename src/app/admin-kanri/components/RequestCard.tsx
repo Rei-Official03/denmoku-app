@@ -22,35 +22,13 @@ export default function RequestCard({ item, onChange }: Props) {
   const router = useRouter();
   const [data, setData] = useState<RequestItem | null>(item);
 
-  // -----------------------------
-  // Mark as processed (Supabase)
-  // -----------------------------
-  const markProcessed = async () => {
-    if (!data) return;
-
-    const { error } = await supabase
-      .from("requests")
-      .update({ processed: true })
-      .eq("id", data.id);
-
-    if (error) {
-      console.error("Supabase update error:", error);
-      return;
-    }
-
-    setData({ ...data, processed: true });
-    onChange();
-  };
-
-  // -----------------------------
-  // Delete item (Supabase)
-  // -----------------------------
+  // Delete（これは confirm ありのまま）
   const deleteItem = async () => {
     if (!data) return;
     if (!confirm("本当に削除しますか？")) return;
 
     const { error } = await supabase
-      .from("requests")
+      .from("request")
       .delete()
       .eq("id", data.id);
 
@@ -70,7 +48,6 @@ export default function RequestCard({ item, onChange }: Props) {
       className={`
         p-4 rounded-xl bg-white/10 backdrop-blur-md shadow-md text-white
         border border-white/10 transition
-        ${data.processed ? "opacity-50" : ""}
       `}
     >
       <div className="text-sm font-bold">{data.title}</div>
@@ -81,14 +58,11 @@ export default function RequestCard({ item, onChange }: Props) {
       </div>
 
       <div className="flex gap-2 mt-3 text-xs">
-        {/* Learned ボタン */}
+        {/* Learned → New に飛ぶだけ（削除しない） */}
         <button
-          onClick={async () => {
-            await markProcessed();
-            await deleteItem();
-
+          onClick={() => {
             router.push(
-              `/admin-kanri/new?title=${encodeURIComponent(
+              `/admin-kanri/new?id=${data.id}&title=${encodeURIComponent(
                 data.title
               )}&artist=${encodeURIComponent(data.artist)}`
             );
@@ -103,7 +77,7 @@ export default function RequestCard({ item, onChange }: Props) {
           Learned
         </button>
 
-        {/* Delete ボタン */}
+        {/* Delete */}
         <button
           onClick={deleteItem}
           className="

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 type Props = {
   id: number;
@@ -20,7 +21,9 @@ type Props = {
 };
 
 export default function EditForm({ id, initial, onSave, titleLabel }: Props) {
-  // ★ 初期値を state に同期（ID が変わったときも正しく更新）
+  const router = useRouter();
+
+  // ★ 初期値を state に同期
   const [title, setTitle] = useState(initial.title);
   const [titleKana, setTitleKana] = useState(initial.titleKana);
   const [artist, setArtist] = useState(initial.artist);
@@ -31,7 +34,7 @@ export default function EditForm({ id, initial, onSave, titleLabel }: Props) {
   const [skillLevel, setSkillLevel] = useState(initial.skillLevel);
   const [isPublic, setIsPublic] = useState(initial.isPublic);
 
-  // ★ ID が変わったら初期値を再セット（DiffEditPage の key={id} と二重保険）
+  // ★ ID が変わったら初期値を再セット
   useEffect(() => {
     setTitle(initial.title);
     setTitleKana(initial.titleKana);
@@ -44,7 +47,7 @@ export default function EditForm({ id, initial, onSave, titleLabel }: Props) {
     setIsPublic(initial.isPublic);
   }, [id, initial]);
 
-  // ★ skillLevel の空白禁止（" " などを弾く）
+  // ★ skillLevel の空白禁止
   const validSkill = skillLevel.trim() !== "";
 
   // ★ 保存ボタンの無効化条件
@@ -57,7 +60,7 @@ export default function EditForm({ id, initial, onSave, titleLabel }: Props) {
     !genre.trim() ||
     !validSkill;
 
-  // ★ 保存（型ゆらぎ対策：boolean / string を正しく渡す）
+  // ★ 保存
   const handleSave = () => {
     onSave({
       title: title.trim(),
@@ -74,6 +77,15 @@ export default function EditForm({ id, initial, onSave, titleLabel }: Props) {
 
   return (
     <main className="mx-auto max-w-xl px-4 py-6 text-white bg-white/5 backdrop-blur-md rounded-xl border border-white/10 shadow-lg">
+
+      {/* ← 戻る（フォーム外） */}
+      <button
+        onClick={() => router.push("/admin-kanri")}
+        className="text-white/70 hover:text-white text-sm mb-4"
+      >
+        ← 戻る
+      </button>
+
       <h1 className="text-lg font-bold mb-6 tracking-wide drop-shadow">
         {titleLabel}（ID: {id}）
       </h1>

@@ -38,10 +38,10 @@ export function mergeSongs(diffs: Record<number, any>): Song[] {
       skillLevel: diff.skillLevel ?? base.skillLevel,
       isPublic: typeof diff.isPublic === "boolean" ? diff.isPublic : base.isPublic,
 
-      // ③ playCount 統合
+      // ③ playCount は diff ではなく専用ストレージから
       playCount: Number(playCounts[base.id] ?? base.playCount ?? 0),
 
-      // ④ diff があるかどうか
+      // ④ diff があるかどうか（playCount は含めない）
       hasDiff: Object.keys(diff).length > 0,
 
       // ⑤ 新規曲ではない

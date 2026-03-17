@@ -1,11 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import EditForm from "@/app/admin-kanri/_components/EditForm";
 import { getNextId } from "@/lib/getNextId";
+import { supabase } from "@/lib/supabase";
 
-// diff 読み込み
 const loadDiffs = () => {
   if (typeof window === "undefined") return {};
   try {
@@ -16,7 +15,6 @@ const loadDiffs = () => {
   }
 };
 
-// diff 保存
 const saveDiffs = (diffs: any) => {
   try {
     localStorage.setItem("song_edits_v1", JSON.stringify(diffs));
@@ -25,12 +23,14 @@ const saveDiffs = (diffs: any) => {
 
 export default function NewSongPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  // 新規曲の初期値
+  const requestId = searchParams.get("id");
+
   const initial = {
-    title: "",
+    title: searchParams.get("title") || "",
     titleKana: "",
-    artist: "",
+    artist: searchParams.get("artist") || "",
     artistKana: "",
     scale: "",
     genre: "",
@@ -39,23 +39,24 @@ export default function NewSongPage() {
     isPublic: false,
   };
 
-  // ★ ここに handleSave を入れる（ID 採番の完全版）
-  const handleSave = (data: any) => {
-    const id = getNextId(); // ← ここで新規IDを採番
+  const handleSave = async (data: any) => {
+    const id = getNextId();
 
     const diffs = loadDiffs();
-
-    // ★ diff の中に id を入れない（重要）
     diffs[id] = { ...data };
-
     saveDiffs(diffs);
+
+    // ★ 保存成功したら request を静かに削除（confirm なし）
+    if (requestId) {
+      await supabase.from("request").delete().eq("id", requestId);
+    }
 
     router.push("/admin-kanri");
   };
 
   return (
     <EditForm
-      id={0} // 新規曲なので 0（表示用）
+      id={0}
       initial={initial}
       onSave={handleSave}
       titleLabel="新規曲を追加"

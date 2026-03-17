@@ -9,19 +9,30 @@ export default function RequestBox() {
   const [from, setFrom] = useState("");
   const [toast, setToast] = useState(false);
 
-  // -----------------------------
-  // Submit → Supabase に保存
-  // -----------------------------
   const handleSubmit = async () => {
-    const { error } = await supabase.from("requests").insert({
-      title,
-      artist,
-      from_name: from,
-      processed: false,
+    // trim 後の値を確定させる（空文字対策）
+    const t = title.trim();
+    const a = artist.trim();
+    const f = from.trim();
+
+    // 必須チェック
+    if (!t || !a || !f) {
+      alert("すべて入力してね！");
+      return;
+    }
+
+    // Supabase へ insert
+    const { error } = await supabase.from("request").insert({
+      title: t,
+      artist: a,
+      from_name: f,
+      // created_at → default now()
+      // processed → default false
     });
 
     if (error) {
       console.error("Supabase insert error:", error);
+      alert("通信に失敗したよ…");
       return;
     }
 
@@ -45,7 +56,7 @@ export default function RequestBox() {
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="曲名"
+          placeholder="曲名（必須）"
           className="
             w-full px-3 py-2 rounded-lg bg-white/20 text-white
             placeholder-white/50 focus:outline-none
@@ -56,7 +67,7 @@ export default function RequestBox() {
         <input
           value={artist}
           onChange={(e) => setArtist(e.target.value)}
-          placeholder="アーティスト名"
+          placeholder="アーティスト名（必須）"
           className="
             w-full px-3 py-2 rounded-lg bg-white/20 text-white
             placeholder-white/50 focus:outline-none
@@ -67,7 +78,7 @@ export default function RequestBox() {
         <input
           value={from}
           onChange={(e) => setFrom(e.target.value)}
-          placeholder="あなたのお名前（From）"
+          placeholder="あなたのお名前（必須）"
           className="
             w-full px-3 py-2 rounded-lg bg-white/20 text-white
             placeholder-white/50 focus:outline-none
@@ -91,14 +102,13 @@ export default function RequestBox() {
         </button>
       </div>
 
-      {/* Toast */}
       {toast && (
         <div
           className="
-          fixed bottom-10 right-6 bg-white/20 backdrop-blur-md
-          text-white text-xs px-4 py-2 rounded-full shadow-lg
-          animate-toast
-        "
+            fixed bottom-10 right-6 bg-white/20 backdrop-blur-md
+            text-white text-xs px-4 py-2 rounded-full shadow-lg
+            animate-toast
+          "
         >
           ありがとう！受け付けたよ♪
         </div>

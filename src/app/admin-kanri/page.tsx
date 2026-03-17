@@ -121,17 +121,6 @@ export default function AdminPage() {
           }}
          />
 
-        {/* ランダムボタン */}
-        <button
-          onClick={handleRandom}
-          className="
-            mt-3 mb-6 px-4 py-2 rounded-lg
-            bg-white/10 hover:bg-white/20
-            text-sm font-bold transition
-          "
-        >
-          ランダム（◎ × 5）
-        </button>
 
         {/* ランダム結果 */}
         {randomResults && (
