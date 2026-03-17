@@ -14,6 +14,7 @@ export type Song = {
   skillLevel: SkillLevel;
   isPublic: boolean;
   createdAt: string;
+  playCount: number;
 };
 
 // 曲データ本体
