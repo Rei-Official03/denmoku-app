@@ -15,6 +15,7 @@ export type Song = {
   isPublic: boolean;
   createdAt: string;
   playCount: number;
+  isNew?: boolean;
 };
 
 // 曲データ本体
