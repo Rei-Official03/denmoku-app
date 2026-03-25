@@ -3,12 +3,15 @@
 type Props = {
   keyword: string;
   setKeyword: (v: string) => void;
-  mode: string;
-  setMode: (v: string) => void;
+
+  // ★ 修正ポイント（string → "id" | "name"）
+  mode: "id" | "name";
+  setMode: (v: "id" | "name") => void;
+
   onSearch: () => void;
   onAdd: () => void;
   onRandom: () => void;
-  onClear: () => void; // ← ★検索結果クリア
+  onClear: () => void;
 };
 
 export default function AdminSearchBar({
