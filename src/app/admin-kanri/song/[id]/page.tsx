@@ -5,6 +5,12 @@ import { useState, useEffect } from "react";
 import { mergeSongs } from "@/lib/mergeSongs";
 import type { Song } from "@/lib/songData";
 
+  type DiffEntry = {
+  key: string;
+  oldValue: string;
+  newValue: string;
+};
+
 export default function SongDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -127,7 +133,7 @@ export default function SongDetailPage() {
       {diffEntries && diffEntries.length > 0 && (
         <div className="mt-6 p-4 rounded-lg bg-white/10 border border-pink-400/40">
           <h2 className="font-bold text-pink-300 mb-2">【未反映の変更】</h2>
-          {diffEntries.map((d) => (
+          {diffEntries.map((d: DiffEntry) => (
             <p key={d.key} className="text-sm">
               ・{d.key}: {d.oldValue} → {d.newValue}
             </p>
