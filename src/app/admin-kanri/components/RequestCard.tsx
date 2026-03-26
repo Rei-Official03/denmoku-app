@@ -22,7 +22,7 @@ export default function RequestCard({ item, onChange }: Props) {
   const router = useRouter();
   const [data, setData] = useState<RequestItem | null>(item);
 
-  // Delete（これは confirm ありのまま）
+  // Delete（confirm あり）
   const deleteItem = async () => {
     if (!data) return;
     if (!confirm("本当に削除しますか？")) return;
@@ -45,10 +45,10 @@ export default function RequestCard({ item, onChange }: Props) {
 
   return (
     <div
-      className={`
+      className="
         p-4 rounded-xl bg-white/10 backdrop-blur-md shadow-md text-white
         border border-white/10 transition
-      `}
+      "
     >
       <div className="text-sm font-bold">{data.title}</div>
       <div className="text-xs text-white/70">{data.artist}</div>
@@ -58,11 +58,11 @@ export default function RequestCard({ item, onChange }: Props) {
       </div>
 
       <div className="flex gap-2 mt-3 text-xs">
-        {/* Learned → New に飛ぶだけ（削除しない） */}
+        {/* 曲として登録（NewSongPage に飛ぶ） */}
         <button
           onClick={() => {
             router.push(
-              `/admin-kanri/new?id=${data.id}&title=${encodeURIComponent(
+              `/admin-kanri/new?requestId=${data.id}&title=${encodeURIComponent(
                 data.title
               )}&artist=${encodeURIComponent(data.artist)}`
             );
@@ -74,7 +74,7 @@ export default function RequestCard({ item, onChange }: Props) {
             text-white font-bold shadow-sm hover:shadow transition
           "
         >
-          Learned
+          曲として登録
         </button>
 
         {/* Delete */}

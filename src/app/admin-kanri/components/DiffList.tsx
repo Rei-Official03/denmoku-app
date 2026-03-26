@@ -1,33 +1,31 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import DiffCard from "./DiffCard";
 
-type DiffMap = Record<string, Record<string, unknown>>;
+import { loadDiffs, saveDiffs, subscribeDiffs } from "@/lib/diffStorage";
+import type { SongDiff } from "@/lib/types";
 
 export default function DiffList() {
-  const [diffs, setDiffs] = useState<DiffMap>({});
+  const [diffs, setDiffs] = useState<SongDiff[]>([]);
 
-  // localStorage 読み込み
-  const reload = useCallback(() => {
-    if (typeof window === "undefined") return;
+  // diff を読み込む
+  const reload = () => {
+    const loaded = loadDiffs();
+    setDiffs(loaded);
+  };
 
-    try {
-      const raw = localStorage.getItem("song_edits_v1");
-      const obj = raw ? (JSON.parse(raw) as DiffMap) : {};
-      setDiffs(obj);
-    } catch {
-      setDiffs({});
-    }
-  }, []);
-
+  // 初回 + diff 更新イベント購読
   useEffect(() => {
     reload();
-  }, [reload]);
+    const unsubscribe = subscribeDiffs(reload);
+    return () => unsubscribe();
+  }, []);
 
-  const ids = Object.keys(diffs).sort((a, b) => Number(a) - Number(b));
+  // ID 昇順
+  const sorted = [...diffs].sort((a, b) => a.id - b.id);
 
-  if (ids.length === 0) {
+  if (sorted.length === 0) {
     return (
       <div className="mt-8 text-white/60 text-sm">
         🎉 現在、未反映の差分はありません
@@ -42,18 +40,14 @@ export default function DiffList() {
     );
     if (!ok) return;
 
-    try {
-      localStorage.setItem("song_edits_v1", JSON.stringify({}));
-    } catch {}
-
-    reload();
+    saveDiffs([]); // ★ diffStorage を使う
   };
 
   return (
     <div className="mt-8">
       <div className="flex items-center justify-between mb-3">
         <div className="text-white/80 text-sm">
-          ⚠ 未反映の差分: {ids.length}
+          ⚠ 未反映の差分: {sorted.length}
         </div>
 
         <button
@@ -70,12 +64,12 @@ export default function DiffList() {
       </div>
 
       <div className="space-y-3">
-        {ids.map((id) => (
+        {sorted.map((diff) => (
           <DiffCard
-            key={id}
-            id={Number(id)}
-            patch={diffs[id]}   // ← diff の中身を正しく渡す
-            onCleared={reload}  // ← 削除後に再読み込み
+            key={diff.id}
+            id={diff.id}
+            patch={diff}      // ★ SongDiff をそのまま渡す
+            onCleared={reload}
           />
         ))}
       </div>

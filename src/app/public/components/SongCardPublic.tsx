@@ -1,20 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import type { Song } from "@/lib/songData";
+import type { SongWithMeta } from "@/lib/types";
 
 type Props = {
-  song: Song;
-  onSelect?: (song: Song) => void;   // ← optional
-  isNew?: boolean;
+  song: SongWithMeta;
+  onSelect?: (song: SongWithMeta) => void;
 };
 
-export default function SongCardPublic({ song, onSelect, isNew }: Props) {
+export default function SongCardPublic({ song, onSelect }: Props) {
   const [showToast, setShowToast] = useState(false);
   const [lastTap, setLastTap] = useState(0);
 
   // Public に出すのは ◎ / ○ / △ のみ
   if (!["◎", "○", "△"].includes(song.skillLevel)) return null;
+
+  // NEW バッジ判定（diff で追加された曲）
+  const isNew = song.hasDiff && song.isNew;
 
   // コピー処理
   const copyInfo = () => {
@@ -30,17 +32,15 @@ export default function SongCardPublic({ song, onSelect, isNew }: Props) {
       copyInfo();
       return;
     }
-    if (onSelect) onSelect(song);   // ← 安全に呼ぶ
+    if (onSelect) onSelect(song);
   };
 
   // iPhone：ダブルタップでコピー
   const handleDoubleTap = () => {
     const now = Date.now();
-
     if (now - lastTap < 300) {
       copyInfo();
     }
-
     setLastTap(now);
   };
 
@@ -130,7 +130,15 @@ export default function SongCardPublic({ song, onSelect, isNew }: Props) {
 }
 
 /* スキルレベルバッジ */
-function SkillBadge({ color, icon, text }: { color: string; icon: string; text: string }) {
+function SkillBadge({
+  color,
+  icon,
+  text,
+}: {
+  color: string;
+  icon: string;
+  text: string;
+}) {
   return (
     <div
       className={`

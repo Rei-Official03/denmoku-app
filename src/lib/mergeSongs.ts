@@ -1,83 +1,70 @@
-import type { Song } from "./songData";
+"use client";
+
+import type { Song, SongDiff, SongWithMeta } from "./types";
+import { songs as baseSongs } from "./songData";
 
 // playCount 読み込み
-const loadPlayCounts = () => {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = localStorage.getItem("song_playcount_v1");
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
-};
+function getPlayCount(id: number): number {
+  if (typeof window === "undefined") return 0;
+  const raw = localStorage.getItem(`play_count_${id}`);
+  return raw ? Number(raw) : 0;
+}
 
-export function mergeSongs(diffs: Record<number, any>): Song[] {
-  // 元データ
-  const baseSongs: Song[] = require("./songData").songs;
+// diffs: SongDiff[] を前提にした最新版 mergeSongs
+export function mergeSongs(
+  diffs: SongDiff[] = [],
+  base: Song[] = baseSongs
+): SongWithMeta[] {
+  const diffMap = new Map<number, SongDiff>();
+  diffs.forEach((d) => diffMap.set(d.id, d));
 
-  // playCount
-  const playCounts = loadPlayCounts();
+  const merged: SongWithMeta[] = [];
 
-  const merged: Song[] = [];
+  // ① 既存曲に diff を適用
+  for (const baseSong of base) {
+    const diff = diffMap.get(baseSong.id);
 
-  // ① 既存曲をマージ
-  for (const base of baseSongs) {
-    const diff = diffs[base.id] ?? {};
+    if (diff) {
+      const { id, isNew, ...patch } = diff;
 
-    const song: Song = {
-      ...base,
+      merged.push({
+        ...baseSong,
+        ...patch,
+        playCount: getPlayCount(baseSong.id),
+        hasDiff: true,
+      });
 
-      // ② diff を上書き（undefined は無視）
-      title: diff.title ?? base.title,
-      titleKana: diff.titleKana ?? base.titleKana,
-      artist: diff.artist ?? base.artist,
-      artistKana: diff.artistKana ?? base.artistKana,
-      scale: diff.scale ?? base.scale,
-      genre: diff.genre ?? base.genre,
-      instUrl: diff.instUrl ?? base.instUrl,
-      skillLevel: diff.skillLevel ?? base.skillLevel,
-      isPublic: typeof diff.isPublic === "boolean" ? diff.isPublic : base.isPublic,
-
-      // ③ playCount は diff ではなく専用ストレージから
-      playCount: Number(playCounts[base.id] ?? base.playCount ?? 0),
-
-      // ④ diff があるかどうか（playCount は含めない）
-      hasDiff: Object.keys(diff).length > 0,
-
-      // ⑤ 新規曲ではない
-      isNew: false,
-    };
-
-    merged.push(song);
+      diffMap.delete(baseSong.id);
+    } else {
+      merged.push({
+        ...baseSong,
+        playCount: getPlayCount(baseSong.id),
+      });
+    }
   }
 
-  // ⑥ 新規曲（base に存在しない ID）
-  for (const idStr of Object.keys(diffs)) {
-    const id = Number(idStr);
-    const diff = diffs[id];
+  // ② diff に残っている isNew === true の曲は「新規曲」
+  for (const diff of diffMap.values()) {
+    if (!diff.isNew) continue;
 
-    const exists = baseSongs.some((s) => s.id === id);
-    if (exists) continue;
+    const { id, isNew, ...patch } = diff;
 
-    const song: Song = {
+    merged.push({
       id,
-      title: diff.title ?? "",
-      titleKana: diff.titleKana ?? "",
-      artist: diff.artist ?? "",
-      artistKana: diff.artistKana ?? "",
-      scale: diff.scale ?? "",
-      genre: diff.genre ?? "",
-      instUrl: diff.instUrl ?? "",
-      skillLevel: diff.skillLevel ?? "",
-      isPublic: Boolean(diff.isPublic),
+      title: patch.title ?? "",
+      titleKana: patch.titleKana ?? "",
+      artist: patch.artist ?? "",
+      artistKana: patch.artistKana ?? "",
+      genre: patch.genre ?? "",
+      scale: patch.scale ?? "",
+      instUrl: patch.instUrl ?? "",
+      skillLevel: patch.skillLevel ?? "△",
+      isPublic: patch.isPublic ?? true,
+      createdAt: patch.createdAt ?? new Date().toISOString().slice(0, 10),
 
-      playCount: Number(playCounts[id] ?? 0),
-
+      playCount: getPlayCount(id),
       hasDiff: true,
-      isNew: true,
-    };
-
-    merged.push(song);
+    });
   }
 
   return merged;

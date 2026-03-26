@@ -10,12 +10,18 @@ export type Song = {
   artistKana: string;
   genre: string;
   scale: string;
-  instUrl: string; // 空文字 or URL
+  instUrl: string;
   skillLevel: SkillLevel;
   isPublic: boolean;
   createdAt: string;
-  playCount: number;
+};
+export type SongDiff = Partial<Omit<Song, 'id'>> & {
+  id: number;
   isNew?: boolean;
+};
+export type SongWithMeta = Song & {
+  playCount: number;
+  hasDiff?: boolean;
 };
 
 // 曲データ本体

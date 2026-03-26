@@ -9,23 +9,12 @@ import RequestList from "./components/RequestList";
 import DiffList from "./components/DiffList";
 import CosmicBackgroundAdmin from "@/components/CosmicBackgroundAdmin";
 
-import type { Song } from "@/lib/songData";
-import { searchSongs } from "@/lib/searchUtils";
-import { mergeSongs } from "@/lib/mergeSongs";
-
-// localStorage 読み込み
-const loadDiffs = () => {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = localStorage.getItem("song_edits_v1");
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
-};
+import type { SongWithMeta } from "@/lib/types";
+import { searchAdminByName, searchAdminById } from "@/lib/searchUtils"; // ★後で修正する
+import { useMergedSongs } from "@/lib/useMergedSongs"; // ★追加
 
 // ◎ から 5 曲ランダム（管理側）
-const pickRandomAdminSongs = (songs: Song[]): Song[] => {
+const pickRandomAdminSongs = (songs: SongWithMeta[]): SongWithMeta[] => {
   const good = songs.filter((s) => s.skillLevel === "◎");
   const shuffled = [...good].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, 5);
@@ -34,25 +23,22 @@ const pickRandomAdminSongs = (songs: Song[]): Song[] => {
 export default function AdminPage() {
   const router = useRouter();
 
+  // ★ mergeSongs の代わりに常に最新の merged songs を取得
+  const mergedSongs = useMergedSongs();
+
   const [keyword, setKeyword] = useState("");
-  const [mode, setMode] = useState<"id" | "name">("name"); // ID / 名前
+  const [mode, setMode] = useState<"id" | "name">("name");
   const [searchKeyword, setSearchKeyword] = useState("");
 
-  const [randomResults, setRandomResults] = useState<Song[] | null>(null);
+  const [randomResults, setRandomResults] = useState<SongWithMeta[] | null>(null);
 
   // SSR → CSR 切り替え
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => setHydrated(true), []);
 
-  // mergeSongs（diff + 新規曲 + playCount）
-  const mergedSongs: Song[] = useMemo(() => {
-    const diffs = loadDiffs();
-    return mergeSongs(diffs);
-  }, []);
-
   // 🔍 検索ボタン
   const handleSearch = () => {
-    setSearchKeyword(keyword); // ← 検索ボタンを押した時だけ検索状態にする
+    setSearchKeyword(keyword.trim());
     setRandomResults(null);
   };
 
@@ -60,7 +46,7 @@ export default function AdminPage() {
   const handleRandom = () => {
     const results = pickRandomAdminSongs(mergedSongs);
     setRandomResults(results);
-    setSearchKeyword(""); // ← 検索結果を消す
+    setSearchKeyword("");
   };
 
   // ⭐ ラジオボタン切り替え時に検索状態をリセット
@@ -71,18 +57,16 @@ export default function AdminPage() {
   };
 
   // 🔍 検索結果
-  const sortedSongs: Song[] = useMemo(() => {
+  const sortedSongs = useMemo(() => {
     const q = searchKeyword.trim();
-    if (q === "") return []; // ← 空なら検索しない
+    if (q === "") return [];
 
-    // ID検索
     if (mode === "id") {
-      const idMatch = mergedSongs.find((song) => song.id.toString() === q);
-      return idMatch ? [idMatch] : [];
+      return searchAdminById(mergedSongs, q);
     }
 
-    // 名前検索（曲名＋アーティスト名まとめて）
-    const filtered = searchSongs(mergedSongs, q, "all");
+    // ★ 名前検索は searchAdminByName に統一（後で searchUtils を修正）
+    const filtered = searchAdminByName(mergedSongs, q);
 
     return filtered.sort((a, b) => {
       if (b.playCount !== a.playCount) return b.playCount - a.playCount;
@@ -137,7 +121,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* 検索結果（検索ボタンを押した時だけ表示） */}
+        {/* 検索結果 */}
         {searchKeyword !== "" && (
           <div className="mb-10">
             <div className="text-white/70 text-sm mb-3">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import RequestCard from "./RequestCard";
 
@@ -19,34 +19,34 @@ export default function RequestList() {
   // -----------------------------
   // Supabase からリクエスト取得
   // -----------------------------
-  const load = async () => {
+  const load = useCallback(async () => {
     const { data, error } = await supabase
-      .from("request") // ← 修正（単数）
+      .from("request") // ← 単数で正しい
       .select("*")
       .order("created_at", { ascending: false });
 
     if (!error && data) {
       setRequests(data);
     }
-  };
+  }, []);
 
   // 初回ロード
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   // -----------------------------
   // Realtime 購読（INSERT / UPDATE / DELETE）
   // -----------------------------
   useEffect(() => {
     const channel = supabase
-      .channel("request-realtime") // ← 任意の名前でOK
+      .channel("request-changes") // ← 任意だが意味が明確
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
-          table: "request", // ← 修正（単数）
+          table: "request",
         },
         () => {
           load(); // 変更があったら即リロード
@@ -57,7 +57,7 @@ export default function RequestList() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [load]);
 
   if (requests.length === 0) {
     return (

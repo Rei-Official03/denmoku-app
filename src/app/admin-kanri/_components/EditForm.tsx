@@ -3,6 +3,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
+import { loadDiffs, saveDiffs } from "@/lib/diffStorage";
+import type { SongDiff } from "@/lib/types";
+
 type Props = {
   id: number;
   initial: {
@@ -16,11 +19,10 @@ type Props = {
     skillLevel: string;
     isPublic: boolean;
   };
-  onSave: (data: any) => void;
   titleLabel: string;
 };
 
-export default function EditForm({ id, initial, onSave, titleLabel }: Props) {
+export default function EditForm({ id, initial, titleLabel }: Props) {
   const router = useRouter();
 
   // ★ 初期値を state に同期
@@ -60,9 +62,12 @@ export default function EditForm({ id, initial, onSave, titleLabel }: Props) {
     !genre.trim() ||
     !validSkill;
 
-  // ★ 保存
+  // ★ 保存（diffStorage に直接保存）
   const handleSave = () => {
-    onSave({
+    const diffs = loadDiffs();
+
+    const patch: SongDiff = {
+      id,
       title: title.trim(),
       titleKana: titleKana.trim(),
       artist: artist.trim(),
@@ -70,15 +75,25 @@ export default function EditForm({ id, initial, onSave, titleLabel }: Props) {
       scale: scale.trim(),
       genre: genre.trim(),
       instUrl: instUrl.trim(),
-      skillLevel: skillLevel.trim(),
+      skillLevel: skillLevel.trim() as any,
       isPublic: Boolean(isPublic),
-    });
+    };
+
+    // 既存の diff を上書き or 新規追加
+    const updated = [
+      ...diffs.filter((d) => d.id !== id),
+      patch,
+    ];
+
+    saveDiffs(updated);
+
+    router.push("/admin-kanri");
   };
 
   return (
     <main className="mx-auto max-w-xl px-4 py-6 text-white bg-white/5 backdrop-blur-md rounded-xl border border-white/10 shadow-lg">
 
-      {/* ← 戻る（フォーム外） */}
+      {/* ← 戻る */}
       <button
         onClick={() => router.push("/admin-kanri")}
         className="text-white/70 hover:text-white text-sm mb-4"

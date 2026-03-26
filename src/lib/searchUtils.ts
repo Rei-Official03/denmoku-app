@@ -1,7 +1,7 @@
 // searchUtils.ts
 // Cosmic Lounge 用：曲データの検索ユーティリティ
 
-import type { Song } from "@/lib/songData";
+import type { Song, SongWithMeta } from "@/lib/types";
 
 // --------------------------------------
 // 正規化（検索の揺れを吸収）
@@ -23,18 +23,18 @@ export function normalize(text: string): string {
 }
 
 // --------------------------------------
-// 検索モード型（UI用）
+// Public 用：検索モード型
 // --------------------------------------
 export type SearchMode = "title" | "artist" | "all";
 
 // --------------------------------------
-// メイン検索（mode 対応版）
+// Public 用：メイン検索
 // --------------------------------------
 export function searchSongs(
-  songs: Song[],
+  songs: (Song | SongWithMeta)[],
   query: string,
   mode: SearchMode
-): Song[] {
+): (Song | SongWithMeta)[] {
   if (!query.trim()) return songs;
 
   const q = normalize(query);
@@ -67,18 +67,47 @@ export function searchSongs(
 }
 
 // --------------------------------------
-// 公開曲のみを返す（isPublic のみ判定）
-// instUrl が undefined / 空 でも絶対に落ちない安全版
+// Admin 用：ID 検索（完全一致）
 // --------------------------------------
-export function filterPublicSongs(songs: Song[]): Song[] {
+export function searchAdminById(
+  songs: (Song | SongWithMeta)[],
+  query: string
+): (Song | SongWithMeta)[] {
+  const q = query.trim();
+  if (!q) return [];
+
+  return songs.filter((song) => song.id.toString() === q);
+}
+
+// --------------------------------------
+// Admin 用：名前検索（titleKana / artistKana のみ）
+// --------------------------------------
+export function searchAdminByName(
+  songs: (Song | SongWithMeta)[],
+  query: string
+): (Song | SongWithMeta)[] {
+  const q = normalize(query);
+  if (!q) return [];
+
+  return songs.filter((song) => {
+    return (
+      normalize(song.titleKana).includes(q) ||
+      normalize(song.artistKana).includes(q)
+    );
+  });
+}
+
+// --------------------------------------
+// 公開曲のみ（Public / Admin 共通）
+// --------------------------------------
+export function filterPublicSongs(songs: (Song | SongWithMeta)[]) {
   return songs.filter((s) => s.isPublic);
 }
 
 // --------------------------------------
-// ジャンル一覧を生成（重複なし）
-// ※ "ALL" は UI 側で扱うため追加しない
+// ジャンル一覧（Public 用）
 // --------------------------------------
-export function getGenres(songs: Song[]): string[] {
+export function getGenres(songs: (Song | SongWithMeta)[]): string[] {
   const set = new Set<string>();
   songs.forEach((s) => set.add(s.genre));
   return Array.from(set).sort();

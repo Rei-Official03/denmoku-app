@@ -9,21 +9,13 @@ import CosmicBackgroundPublic from "@/components/CosmicBackgroundPublic";
 import RequestBox from "./components/RequestBox";
 
 import { searchSongs } from "@/lib/searchUtils";
-import { mergeSongs } from "@/lib/mergeSongs";
-
-// localStorage 読み込み
-const loadDiffs = () => {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = localStorage.getItem("song_edits_v1");
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
-};
+import { useMergedSongs } from "@/lib/useMergedSongs"; // ★追加
 
 export default function PublicPage() {
   const router = useRouter();
+
+  // ★ mergeSongs の代わりに常に最新の merged songs を取得
+  const mergedSongs = useMergedSongs();
 
   const [keyword, setKeyword] = useState("");
   const [mode, setMode] = useState("all");
@@ -40,12 +32,6 @@ export default function PublicPage() {
 
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => setHydrated(true), []);
-
-  // mergeSongs
-  const mergedSongs = useMemo(() => {
-    const diffs = loadDiffs();
-    return mergeSongs(diffs);
-  }, []);
 
   // クリア
   const handleClearResults = () => {
@@ -103,7 +89,7 @@ export default function PublicPage() {
     setRecentSongs(sorted);
   }, [mergedSongs]);
 
-  // ⭐ 検索実行（最適化）
+  // ⭐ 検索実行
   const handleSearch = () => {
     setSearchKeyword(keyword.trim());
     setSearchMode(mode);
@@ -134,7 +120,7 @@ export default function PublicPage() {
     setPage(1);
   };
 
-  // ⭐ 検索結果（hasSearched に依存しない）
+  // ⭐ 検索結果
   const filteredSongs = useMemo(() => {
     const q = searchKeyword.trim();
 
