@@ -64,31 +64,31 @@ export default function EditForm({ id, initial, titleLabel }: Props) {
 
   // ★ 保存（diffStorage に直接保存）
   const handleSave = () => {
-    const diffs = loadDiffs();
+  const diffs = loadDiffs();
 
-    const patch: SongDiff = {
-      id,
-      title: title.trim(),
-      titleKana: titleKana.trim(),
-      artist: artist.trim(),
-      artistKana: artistKana.trim(),
-      scale: scale.trim(),
-      genre: genre.trim(),
-      instUrl: instUrl.trim(),
-      skillLevel: skillLevel.trim() as any,
-      isPublic: Boolean(isPublic),
-    };
-
-    // 既存の diff を上書き or 新規追加
-    const updated = [
-      ...diffs.filter((d) => d.id !== id),
-      patch,
-    ];
-
-    saveDiffs(updated);
-
-    router.push("/admin-kanri");
+  const patch: SongDiff = {
+    id,
+    isNew: id === 0 ? true : undefined, // ★ 新規曲なら isNew: true
+    title: title.trim(),
+    titleKana: titleKana.trim(),
+    artist: artist.trim(),
+    artistKana: artistKana.trim(),
+    scale: scale.trim(),
+    genre: genre.trim(),
+    instUrl: instUrl.trim(),
+    skillLevel: skillLevel.trim() as any,
+    isPublic: Boolean(isPublic),
   };
+
+  const updated = [
+    ...diffs.filter((d) => d.id !== id),
+    patch,
+  ];
+
+  saveDiffs(updated);
+
+  router.push("/admin-kanri");
+};
 
   return (
     <main className="mx-auto max-w-xl px-4 py-6 text-white bg-white/5 backdrop-blur-md rounded-xl border border-white/10 shadow-lg">

@@ -12,9 +12,8 @@ export default function NewSongPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const requestId = searchParams.get("id");
+  const requestId = searchParams.get("requestId");
 
-  // リクエストから初期値を受け取る
   const initial = {
     title: searchParams.get("title") || "",
     titleKana: "",
@@ -27,15 +26,14 @@ export default function NewSongPage() {
     isPublic: false,
   };
 
-  // ★ 新規曲保存
   const handleSave = async (data: any) => {
-    const id = getNextId(); // 新規ID採番
+    const id = getNextId();
 
     const diffs = loadDiffs();
 
     const patch: SongDiff = {
       id,
-      isNew: true, // ★ 新規曲フラグ（必須）
+      isNew: true,
       ...data,
     };
 
@@ -43,7 +41,7 @@ export default function NewSongPage() {
 
     saveDiffs(updated);
 
-    // ★ リクエストから来た場合は削除
+    // リクエストから来た場合は削除
     if (requestId) {
       await supabase.from("request").delete().eq("id", requestId);
     }
@@ -53,7 +51,7 @@ export default function NewSongPage() {
 
   return (
     <EditForm
-      id={0} // 表示用（新規曲）
+      id={0}
       initial={initial}
       titleLabel="新規曲を追加"
       onSave={handleSave}
